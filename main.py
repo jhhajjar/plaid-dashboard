@@ -205,6 +205,29 @@ def categorize(name, plaid_cat, amount, account_id):
     # couldn't categorize
     return ""
 
+def add_rent(df, today):
+    """
+    Add rent to the last day of the last month
+    df: the spreadsheet
+    """
+    # get the last month
+    curr_month = today.month
+    last_month = (curr_month - 1)%12
+
+    # get all transactions from last month
+    last_month_trans = df[df['Month'] == last_month]
+    # see if rent is in there
+    if ((last_month_trans['Amount'] == -1500) & (last_month_trans['Category'] == 'Rent')).any():
+        return df
+    else:
+        # put rent in for last day of that month
+        last_date = last_month_trans['Date'].values[0]
+        rent_row = [last_month, last_date, "Rent", -1500]
+        all_rows = df.values.tolist()
+        all_rows.append(rent_row)
+        df = pd.DataFrame(all_rows, columns=['Month', 'Date', 'Description', 'Category', 'Amount']).sort_values(by="Date", ascending=False)
+        return df
+
 def transactions_to_df(transactions):
     """
     Process all transactions retrieved into a dataframe
@@ -214,7 +237,7 @@ def transactions_to_df(transactions):
     for tr in transactions:
         month, date, description, plaid_category, amount = process_transaction(tr)
         category = categorize(description, plaid_category, amount, tr['account_id'])
-        if description in SKIP_THESE:
+        if description in SKIP_THESE or amount == 1500: # for rent
             continue
         dct['Month'].append(month)
         dct['Date'].append(date)
@@ -252,7 +275,7 @@ def update_values(spreadsheet_id, range_name, value_input_option, sheet_values):
         print(f"An error occurred: {error}")
         return error
 
-def main():
+def main(debug=False):
     # read data from googoo into df.
     current_sheet_df = get_googoo_df()
     
@@ -269,12 +292,17 @@ def main():
     full_df.sort_values("Date", ascending=False, inplace=True)
     full_df = full_df[['Month', 'Date', 'Description', 'Category', 'Amount']]   # get the ordering right
     full_df.drop_duplicates(subset=['Date', 'Description', 'Amount'], inplace=True)
+    full_df = add_rent(full_df, today)
+    full_df.sort_values("Date", ascending=False, inplace=True)
     full_df['Date'] = full_df['Date'].apply(lambda x: x.strftime("%m-%d-%Y"))
     
     # write that whole mf to googoo
-    update_values(SHEET_ID, TABLE_CELLS, "USER_ENTERED", full_df.values.tolist())
+    if debug:
+        print(full_df)
+    else:
+        update_values(SHEET_ID, TABLE_CELLS, "USER_ENTERED", full_df.values.tolist())
 
     return
 
 if __name__ == '__main__':
-    main()
+    main(debug=False)
