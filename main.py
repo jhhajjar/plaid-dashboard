@@ -26,6 +26,9 @@ SKIP_THESE = [
 ]
 
 def start_plaid():
+    """"
+    Starts plaid client
+    """
     configuration = plaid.Configuration(
         host=plaid.Environment.Development,
         api_key={
@@ -38,6 +41,9 @@ def start_plaid():
     return client
 
 def google_credentials():
+    """
+    Get google credentials if we don't have them...
+    """
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
@@ -60,6 +66,9 @@ def google_credentials():
     return creds
 
 def get_googoo_df():
+    """
+    Read in existing spreadsheet into a dataframe
+    """
     try:
         creds = google_credentials()
         service = build('sheets', 'v4', credentials=creds)
@@ -97,6 +106,11 @@ def get_googoo_df():
         print(e)
 
 def get_recent_transactions(start, end):
+    """
+    Retrieve all transactions between two dates
+    start: start date
+    end: end date
+    """
     client = start_plaid()
 
     request = TransactionsGetRequest(
@@ -125,6 +139,10 @@ def get_recent_transactions(start, end):
     return transactions
 
 def process_transaction(tr):
+    """
+    Get relevant information out of transaction (month, date, description, plaid categories, and amount)
+    tr: JSON transaction object
+    """
     description = tr['merchant_name'] if tr['merchant_name'] else tr['name']
     amount = -tr['amount']
     date = tr['date']
@@ -134,6 +152,13 @@ def process_transaction(tr):
     return month, date, description, category, amount
 
 def categorize(name, plaid_cat, amount, account_id):
+    """
+    Categorize based on spreadsheet
+    name: merchant name
+    plaid_cat: plaid categories (- delimited)
+    amount: dollar amount:
+    account_id: id of account associated with this purchase
+    """
 
     # td cash credit card
     if account_id == 'rMKA8Y03xgUnNBXox0m0S9VErBZbgrcj3ezj87':
@@ -181,6 +206,10 @@ def categorize(name, plaid_cat, amount, account_id):
     return ""
 
 def transactions_to_df(transactions):
+    """
+    Process all transactions retrieved into a dataframe
+    transactions: the transactions list retrieved from Plaid
+    """
     dct = defaultdict(list)
     for tr in transactions:
         month, date, description, plaid_category, amount = process_transaction(tr)
@@ -224,8 +253,6 @@ def update_values(spreadsheet_id, range_name, value_input_option, sheet_values):
         return error
 
 def main():
-    # WORKFLOW is:
-
     # read data from googoo into df.
     current_sheet_df = get_googoo_df()
     
