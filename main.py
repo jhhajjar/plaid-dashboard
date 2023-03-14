@@ -108,8 +108,8 @@ def get_googoo_df():
 def get_recent_transactions(start, end):
     """
     Retrieve all transactions between two dates
-    start: start date
-    end: end date
+    start: start date (datetime.date)
+    end: end date (datetime.date)
     """
     client = start_plaid()
 
@@ -145,7 +145,7 @@ def process_transaction(tr):
     """
     description = tr['merchant_name'] if tr['merchant_name'] else tr['name']
     amount = -tr['amount']
-    date = tr['date']
+    date = tr['authorized_date'] if tr['authorized_date'] else tr['date']
     category = '-'.join(tr['category'])
     month = date.month
     
