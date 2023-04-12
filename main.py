@@ -22,7 +22,8 @@ TABLE_CELLS = 'A2:E1000'
 
 SKIP_THESE = [
     "Recurring Automatic Payment",
-    "TD BANK PAYMENT"
+    "TD BANK PAYMENT",
+    "TD BANK"
 ]
 
 def start_plaid():
@@ -222,7 +223,7 @@ def add_rent(df, today):
     else:
         # put rent in for last day of that month
         last_date = last_month_trans['Date'].values[0]
-        rent_row = [last_month, last_date, "Rent", -1500]
+        rent_row = [last_month, last_date, "Rent", "Rent", -1500]
         all_rows = df.values.tolist()
         all_rows.append(rent_row)
         df = pd.DataFrame(all_rows, columns=['Month', 'Date', 'Description', 'Category', 'Amount']).sort_values(by="Date", ascending=False)
