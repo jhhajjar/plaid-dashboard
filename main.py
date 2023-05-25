@@ -147,12 +147,12 @@ def process_transaction(tr):
     description = tr['merchant_name'] if tr['merchant_name'] else tr['name']
     amount = -tr['amount']
     date = tr['authorized_date'] if tr['authorized_date'] else tr['date']
-    category = '-'.join(tr['category'])
+    category = categorize(tr, description)
     month = date.month
     
     return month, date, description, category, amount
 
-def categorize(name, plaid_cat, amount, account_id):
+def categorize(tr, name):
     """
     Categorize based on spreadsheet
     name: merchant name
@@ -162,7 +162,7 @@ def categorize(name, plaid_cat, amount, account_id):
     """
 
     # td cash credit card
-    if account_id == 'rMKA8Y03xgUnNBXox0m0S9VErBZbgrcj3ezj87':
+    if tr['account_id'] == 'vQzDkopk4jfDPJyZ5qXnfqnAVD00mMF8d4RDb':
         return "Food"
 
     category_map = {
@@ -190,13 +190,14 @@ def categorize(name, plaid_cat, amount, account_id):
         "nontd atm fee": "Fee" 
     }
 
-    if amount == -1500 and name == 'Venmo':
-        return "Rent"
-
-    # check categories
-    for key in category_map:
-        if key in plaid_cat:
-            return category_map[key]
+    if name == 'Venmo' and tr['amount'] == 60:  #guitar
+        return "Self Improvement"
+    
+    if tr['category'] is not None:
+        # check categories
+        for key in category_map:
+            if key in tr['category']:
+                return category_map[key]
 
     # check name
     for key in name_map:
@@ -229,6 +230,29 @@ def add_rent(df, today):
         df = pd.DataFrame(all_rows, columns=['Month', 'Date', 'Description', 'Category', 'Amount']).sort_values(by="Date", ascending=False)
         return df
 
+def running_ledger(transactions):
+    ddict = defaultdict(list)
+    for tr in transactions:
+        if tr['category'] is not None:
+            ddict['category'].append('-'.join(tr['category']))
+        else:
+            ddict['category'].append("")
+        ddict['merchant_name'].append(tr['merchant_name'])
+        ddict['name'].append(tr['name'])
+        ddict['amount'].append(-tr['amount'])
+        ddict['authorized_date'].append(tr['authorized_date'])
+        ddict['date'].append(tr['date'])
+
+    recent_df = pd.DataFrame(ddict)
+    recent_df.date = pd.to_datetime(recent_df.date)
+
+    df = pd.read_csv("./all_transactions.csv")
+    df.date = pd.to_datetime(df.date)
+    df = pd.concat((df, recent_df))
+    df.drop_duplicates(inplace=True)
+    df = df.sort_values(by='date', ascending=False)
+    df.to_csv("./all_transactions.csv", index=False)
+
 def transactions_to_df(transactions):
     """
     Process all transactions retrieved into a dataframe
@@ -236,9 +260,8 @@ def transactions_to_df(transactions):
     """
     dct = defaultdict(list)
     for tr in transactions:
-        month, date, description, plaid_category, amount = process_transaction(tr)
-        category = categorize(description, plaid_category, amount, tr['account_id'])
-        if description in SKIP_THESE or amount == 1500: # for rent
+        month, date, description, category, amount = process_transaction(tr)
+        if description in SKIP_THESE or amount == -1500 or amount == 0: # for rent
             continue
         dct['Month'].append(month)
         dct['Date'].append(date)
@@ -286,6 +309,7 @@ def main(debug=False):
     # read data from plaid from that date or maybe that date minus one
     today = dt.now().date()
     trs = get_recent_transactions(most_recent_date, today)
+    running_ledger(trs) # add to total ledger
     recent_transactions = transactions_to_df(trs)
     
     # add that data to df
