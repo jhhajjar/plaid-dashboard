@@ -2,6 +2,8 @@ import plaid
 import pandas as pd
 import numpy as np
 import os.path
+import json
+import os
 from plaid.model.transactions_get_request_options import TransactionsGetRequestOptions
 from plaid.model.transactions_get_request import TransactionsGetRequest
 from google.auth.transport.requests import Request
@@ -12,19 +14,21 @@ from googleapiclient.errors import HttpError
 from collections import defaultdict
 from plaid.api import plaid_api
 from datetime import datetime as dt
-from corn import *
+from argparse import ArgumentParser
+from dotenv import load_dotenv
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 # Range of cells to update
-TABLE_CELLS = 'A2:E1000'
+TABLE_CELLS = 'A2:E2000'
 
 SKIP_THESE = [
     "Recurring Automatic Payment",
     "TD BANK PAYMENT",
     "TD BANK"
 ]
+
 
 def start_plaid():
     """"
@@ -33,13 +37,14 @@ def start_plaid():
     configuration = plaid.Configuration(
         host=plaid.Environment.Development,
         api_key={
-            'clientId': CLIENT_ID,
-            'secret': SECRET,
+            'clientId': os.getenv("CLIENT_ID"),
+            'secret': os.getenv("SECRET"),
         }
     )
     api_client = plaid.ApiClient(configuration)
     client = plaid_api.PlaidApi(api_client)
     return client
+
 
 def google_credentials():
     """
@@ -66,6 +71,7 @@ def google_credentials():
 
     return creds
 
+
 def get_googoo_df():
     """
     Read in existing spreadsheet into a dataframe
@@ -76,7 +82,8 @@ def get_googoo_df():
 
         # Call the Sheets API
         sheet = service.spreadsheets()
-        result = sheet.values().get(spreadsheetId=SHEET_ID, range=TABLE_CELLS).execute()
+        result = sheet.values().get(spreadsheetId=os.getenv(
+            'SHEET_ID'), range=TABLE_CELLS).execute()
         values = result.get('values', [])
 
         if not values:
@@ -87,24 +94,25 @@ def get_googoo_df():
         vals_np = np.array(values)
         spreadsheet_df = pd.DataFrame(
             {
-                'Month': vals_np[:,0].astype(int),
-                'Date': vals_np[:,1],
-                'Description': vals_np[:,2],
-                'Category': vals_np[:,3],
-                'Amount': vals_np[:,4].astype(float)
+                'Month': vals_np[:, 0].astype(int),
+                'Date': vals_np[:, 1],
+                'Description': vals_np[:, 2],
+                'Category': vals_np[:, 3],
+                'Amount': vals_np[:, 4].astype(float)
             }
         )
         # parse dates and sort
         spreadsheet_df['Date'] = pd.to_datetime(spreadsheet_df['Date'])
         spreadsheet_df['Date'] = spreadsheet_df['Date'].dt.date
         spreadsheet_df.sort_values('Date', ascending=False, inplace=True)
-        
+
         return spreadsheet_df
-        
+
     except HttpError as err:
         print(err)
     except Exception as e:
         print(e)
+
 
 def get_recent_transactions(start, end):
     """
@@ -115,7 +123,7 @@ def get_recent_transactions(start, end):
     client = start_plaid()
 
     request = TransactionsGetRequest(
-        access_token=ACCESS_TOKEN,
+        access_token=os.getenv('ACCESS_TOKEN'),
         start_date=start,
         end_date=end,
     )
@@ -129,15 +137,16 @@ def get_recent_transactions(start, end):
         options.offset = len(transactions)
 
         request = TransactionsGetRequest(
-            access_token=ACCESS_TOKEN,
+            access_token=os.getenv('ACCESS_TOKEN'),
             start_date=start,
             end_date=end,
             options=options
         )
         response = client.transactions_get(request)
         transactions += response['transactions']
-    
+
     return transactions
+
 
 def process_transaction(tr):
     """
@@ -149,8 +158,9 @@ def process_transaction(tr):
     date = tr['authorized_date'] if tr['authorized_date'] else tr['date']
     category = categorize(tr, description)
     month = date.month
-    
+
     return month, date, description, category, amount
+
 
 def categorize(tr, name):
     """
@@ -165,47 +175,26 @@ def categorize(tr, name):
     if tr['account_id'] == 'vQzDkopk4jfDPJyZ5qXnfqnAVD00mMF8d4RDb':
         return "Food"
 
-    category_map = {
-        "Supermarkets and Groceries": "Groceries",
-        "Public Transport Services": "Transportation",
-        "Travel": "Transportation",
-        "Venmo": "Food",
-        "Financial Planning and Investments": "Investing",
-        "Recreation": "Self Improvement",
-        "Restaurants": "Food",
-        "Photography": "Entertainment",
-        "Payroll": "Income",
-        "Deposit": "Income",
-        "Food and Drink": "Food",
-        "Credit": "Income",
-        "Convenience": "Groceries",
-    }
+    with open('./mappings.json', 'r') as fp:
+        mappings = json.load(fp)
 
-    name_map = {
-        "ski": "Entertainment",
-        "too good to go inc.": "Food",
-        "robinhood": "Investing",
-        "hopper": "Transportation",
-        "dartmouth coach": "Transportation",
-        "nontd atm fee": "Fee" 
-    }
-
-    if name == 'Venmo' and tr['amount'] == 60:  #guitar
+    if name == 'Venmo' and tr['amount'] == 60:  # guitar
         return "Self Improvement"
-    
+
     if tr['category'] is not None:
         # check categories
-        for key in category_map:
+        for key in mappings['category_map']:
             if key in tr['category']:
-                return category_map[key]
+                return mappings['category_map'][key]
 
     # check name
-    for key in name_map:
+    for key in mappings['name_map']:
         if key.lower() in name.lower():
-            return name_map[key]
+            return mappings['name_map'][key]
 
     # couldn't categorize
     return ""
+
 
 def add_rent(df, today):
     """
@@ -214,7 +203,7 @@ def add_rent(df, today):
     """
     # get the last month
     curr_month = today.month
-    last_month = (curr_month - 1)%12
+    last_month = (curr_month - 1) % 12
 
     # get all transactions from last month
     last_month_trans = df[df['Month'] == last_month]
@@ -227,21 +216,24 @@ def add_rent(df, today):
         rent_row = [last_month, last_date, "Rent", "Rent", -1500]
         all_rows = df.values.tolist()
         all_rows.append(rent_row)
-        df = pd.DataFrame(all_rows, columns=['Month', 'Date', 'Description', 'Category', 'Amount']).sort_values(by="Date", ascending=False)
+        df = pd.DataFrame(all_rows, columns=[
+                          'Month', 'Date', 'Description', 'Category', 'Amount']).sort_values(by="Date", ascending=False)
         return df
+
 
 def running_ledger(transactions):
     ddict = defaultdict(list)
     for tr in transactions:
+        ddict['date'].append(tr['date'])
+        ddict['authorized_date'].append(tr['authorized_date'])
+        ddict['transaction_id'].append(tr['transaction_id'])
+        ddict['name'].append(tr['name'])
+        ddict['merchant_name'].append(tr['merchant_name'])
         if tr['category'] is not None:
             ddict['category'].append('-'.join(tr['category']))
         else:
             ddict['category'].append("")
-        ddict['merchant_name'].append(tr['merchant_name'])
-        ddict['name'].append(tr['name'])
         ddict['amount'].append(-tr['amount'])
-        ddict['authorized_date'].append(tr['authorized_date'])
-        ddict['date'].append(tr['date'])
 
     recent_df = pd.DataFrame(ddict)
     recent_df.date = pd.to_datetime(recent_df.date)
@@ -249,9 +241,11 @@ def running_ledger(transactions):
     df = pd.read_csv("./all_transactions.csv")
     df.date = pd.to_datetime(df.date)
     df = pd.concat((df, recent_df))
-    df.drop_duplicates(inplace=True)
-    df = df.sort_values(by='date', ascending=False)
+    df['authorized_date'] = df['authorized_date'].fillna(df['date'])
+    df.drop_duplicates(subset=['transaction_id'], inplace=True)
+    df = df.sort_values(by='authorized_date', ascending=False)
     df.to_csv("./all_transactions.csv", index=False)
+
 
 def transactions_to_df(transactions):
     """
@@ -261,7 +255,7 @@ def transactions_to_df(transactions):
     dct = defaultdict(list)
     for tr in transactions:
         month, date, description, category, amount = process_transaction(tr)
-        if description in SKIP_THESE or amount == -1500 or amount == 0: # for rent
+        if description in SKIP_THESE or amount == 0:
             continue
         dct['Month'].append(month)
         dct['Date'].append(date)
@@ -273,8 +267,9 @@ def transactions_to_df(transactions):
     df['Date'] = pd.to_datetime(df['Date'])
     df['Date'] = df['Date'].dt.date
     df.sort_values('Date', ascending=False, inplace=True)
-    
+
     return df
+
 
 def update_values(spreadsheet_id, range_name, value_input_option, sheet_values):
     """
@@ -299,35 +294,48 @@ def update_values(spreadsheet_id, range_name, value_input_option, sheet_values):
         print(f"An error occurred: {error}")
         return error
 
-def main(debug=False):
+
+def main(args):
+    debug = args.debug
+    if debug:
+        print("WE ARE IN DEBUG MODE BABY")
+
+    load_dotenv()
+
     # read data from googoo into df.
     current_sheet_df = get_googoo_df()
-    
+
     # get last date.
     most_recent_date = current_sheet_df['Date'].values[0]
-    
+
     # read data from plaid from that date or maybe that date minus one
     today = dt.now().date()
     trs = get_recent_transactions(most_recent_date, today)
-    running_ledger(trs) # add to total ledger
+    running_ledger(trs)  # add to total ledger
     recent_transactions = transactions_to_df(trs)
-    
+
     # add that data to df
     full_df = pd.concat((recent_transactions, current_sheet_df), axis=0)
     full_df.sort_values("Date", ascending=False, inplace=True)
-    full_df = full_df[['Month', 'Date', 'Description', 'Category', 'Amount']]   # get the ordering right
-    full_df.drop_duplicates(subset=['Date', 'Description', 'Amount'], inplace=True)
-    full_df = add_rent(full_df, today)
+    full_df = full_df[['Month', 'Date', 'Description',
+                       'Category', 'Amount']]   # get the ordering right
+    full_df.drop_duplicates(
+        subset=['Date', 'Description', 'Amount'], inplace=True)
     full_df.sort_values("Date", ascending=False, inplace=True)
     full_df['Date'] = full_df['Date'].apply(lambda x: x.strftime("%m-%d-%Y"))
-    
+
     # write that whole mf to googoo
     if debug:
         print(full_df)
     else:
-        update_values(SHEET_ID, TABLE_CELLS, "USER_ENTERED", full_df.values.tolist())
+        update_values(os.getenv("SHEET_ID"), TABLE_CELLS, "USER_ENTERED",
+                      full_df.values.tolist())
 
     return
 
+
 if __name__ == '__main__':
-    main(debug=False)
+    ap = ArgumentParser()
+    ap.add_argument('--debug', action='store_true')
+    args = ap.parse_args()
+    main(args)
