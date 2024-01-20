@@ -7,7 +7,7 @@ from dateutil.relativedelta import relativedelta
 
 class TransactionSet:
     def __init__(self, start, end=None) -> None:
-        self.full_df = pd.read_csv('./all_transactions.csv')
+        self.full_df = pd.read_csv('./clean_ledger.csv')
         self.full_df['date'] = pd.to_datetime(self.full_df['date'])
         self.full_df['authorized_date'] = pd.to_datetime(
             self.full_df['authorized_date'])
@@ -23,8 +23,8 @@ class TransactionSet:
         self.number_of_days = (dt(self.end.year, self.end.month, calendar.monthrange(
             self.end.year, self.end.month)[1]) - dt(self.start.year, self.start.month, 1)).days
 
-    def _format_date(self, date_str):
-        return dt.strptime(date_str, '%Y-%m')
+    def _format_date(self, date_str) -> dt.date():
+        return dt.strptime(date_str, '%Y-%m').date()
 
     def _apply_temporal_filter(self, start, end=None) -> pd.DataFrame:
         """
@@ -66,13 +66,13 @@ class TransactionSet:
         """
         return self.df.sort_values(by='amount', ascending=True).head(n)
 
-    def group_by_categories(self):
+    def group_by_categories(self) -> pd.DataFrame:
         """
         Group by categories of transactions.
         """
         return self.df.groupby(by='category')['amount'].sum()
 
-    def compare_categories(self):
+    def compare_categories(self) -> pd.DataFrame:
         """
         Get the difference between what you spent on last time delta to this one
         """
@@ -87,19 +87,19 @@ class TransactionSet:
         comp_categories = comp_df.groupby(by='category')['amount'].sum()
         return np.round((self.group_by_categories() - comp_categories) / comp_categories * 100, 2)
 
-    def money_by_day(self):
+    def money_by_day(self) -> pd.DataFrame:
         """
         Get the average amount of money that you net by day
         """
         return self.df['amount'].sum() / self.number_of_days
 
-    def money_earned_by_day(self):
+    def money_earned_by_day(self) -> pd.DataFrame:
         """
         Returns the average amount of money that you earn by day
         """
         return self.df[self.df['amount'] > 0]['amount'].sum() / self.number_of_days
 
-    def money_spent_by_day(self):
+    def money_spent_by_day(self) -> pd.DataFrame:
         """
         Returns the average amount of money that you spend by day
         """
