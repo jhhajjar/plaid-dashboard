@@ -156,10 +156,14 @@ def main(args):
     # read the .date file to find out where to start analysis
     date_str = open('.date', 'r').read()
     start_date = dt.strptime(date_str, '%Y-%m-%d').date()
-    end_date = dt.now().date()
+    now = dt.now()
+    end_date = now.date()
 
     # get the recent transactions
     transactions = get_recent_transactions(start_date, end_date)
+    if len(transactions) == 0:
+        print(f"{now}: No new transactions.")
+        return
 
     # save to raw ledger, keep in memory
     raw_transactions = raw_ledger(transactions)
@@ -167,6 +171,8 @@ def main(args):
     # categorize each transaction
     clean_transactions = clean_ledger(raw_transactions)
     clean_transactions.to_csv('./clean_ledger.csv', index=False)
+
+    print(f"{now}: Added {len(transactions)} new transactions")
 
     open('.date', 'w').write(end_date.strftime('%Y-%m-%d'))
 
