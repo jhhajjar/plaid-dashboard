@@ -156,6 +156,7 @@ def process_transaction(tr):
     description = tr['merchant_name'] if tr['merchant_name'] else tr['name']
     amount = -tr['amount']
     date = tr['authorized_date'] if tr['authorized_date'] else tr['date']
+    cat_description = ','.join([tr['merchant_name'], tr['name']])
     category = categorize(tr, description)
     month = date.month
 
@@ -170,10 +171,6 @@ def categorize(tr, name):
     amount: dollar amount:
     account_id: id of account associated with this purchase
     """
-
-    # td cash credit card
-    if tr['account_id'] == 'vQzDkopk4jfDPJyZ5qXnfqnAVD00mMF8d4RDb':
-        return "Food"
 
     with open('./mappings.json', 'r') as fp:
         mappings = json.load(fp)
@@ -193,7 +190,7 @@ def categorize(tr, name):
             return mappings['name_map'][key]
 
     # couldn't categorize
-    return ""
+    return "Misc"
 
 
 def add_rent(df, today):
