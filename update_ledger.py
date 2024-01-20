@@ -1,4 +1,3 @@
-import math
 import plaid
 import pandas as pd
 import numpy as np
@@ -123,8 +122,8 @@ def raw_ledger(transactions):
         ddict['amount'].append(-tr['amount'])
 
     recent_df = pd.DataFrame(ddict)
-    recent_df.date = pd.to_datetime(recent_df.date)
-    recent_df.authorized_date = pd.to_datetime(recent_df.authorized_date)
+    recent_df['date'] = pd.to_datetime(recent_df['date'])
+    recent_df['authorized_date'] = pd.to_datetime(recent_df['authorized_date'])
 
     df = pd.read_csv("./raw_ledger.csv",
                      parse_dates=['authorized_date', 'date'])
