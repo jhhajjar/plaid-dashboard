@@ -127,10 +127,15 @@ def raw_ledger(transactions):
 
     df = pd.read_csv("./raw_ledger.csv",
                      parse_dates=['authorized_date', 'date'])
+    curr_num_transactions = df.shape[0]
+
     df = pd.concat((df, recent_df))
     df.drop_duplicates(subset=['transaction_id'], inplace=True)
-    df = df.sort_values(by=['authorized_date'], ascending=False)
-    return df
+    new_transactions = df.shape[0] - curr_num_transactions
+    if new_transactions > 0:
+        return df, new_transactions
+    else:
+        return False, 0
 
 
 def clean_ledger(transactions) -> None:
@@ -163,16 +168,18 @@ def main(args):
     transactions = get_recent_transactions(start_date, end_date)
     if len(transactions) == 0:
         print(f"{now}: No new transactions.")
-        return
 
     # save to raw ledger, keep in memory
-    raw_transactions = raw_ledger(transactions)
-    raw_transactions.to_csv('./raw_ledger.csv', index=False)
-    # categorize each transaction
-    clean_transactions = clean_ledger(raw_transactions)
-    clean_transactions.to_csv('./clean_ledger.csv', index=False)
+    raw_transactions, num_new = raw_ledger(transactions)
+    if num_new > 0:
+        raw_transactions.to_csv('./raw_ledger.csv', index=False)
+        # categorize each transaction
+        clean_transactions = clean_ledger(raw_transactions)
+        clean_transactions.to_csv('./clean_ledger.csv', index=False)
 
-    print(f"{now}: Added {len(transactions)} new transactions")
+        print(f"{now}: Added {num_new} new transactions.")
+    else:
+        print(f"{now}: No new transactions.")
 
     open('.date', 'w').write(end_date.strftime('%Y-%m-%d'))
 
