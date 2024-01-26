@@ -122,17 +122,20 @@ def raw_ledger(transactions):
         ddict['amount'].append(-tr['amount'])
 
     recent_df = pd.DataFrame(ddict)
-    recent_df['date'] = pd.to_datetime(recent_df['date'])
-    recent_df['authorized_date'] = pd.to_datetime(recent_df['authorized_date'])
+    recent_df['authorized_date'].fillna(recent_df['date'])
 
-    df = pd.read_csv("./raw_ledger.csv",
-                     parse_dates=['authorized_date', 'date'])
+    df = pd.read_csv("./raw_ledger.csv")
     curr_num_transactions = df.shape[0]
-
     df = pd.concat((df, recent_df))
     df.drop_duplicates(subset=['transaction_id'], inplace=True)
     new_transactions = df.shape[0] - curr_num_transactions
     if new_transactions > 0:
+        df['date'] = pd.to_datetime(
+            df['date'], format="%Y-%m-%d", errors='coerce').dt.date
+        df['authorized_date'] = pd.to_datetime(
+            df['authorized_date'], format="%Y-%m-%d", errors='coerce').dt.date
+
+        df.sort_values(by='authorized_date', inplace=True, ascending=False)
         return df, new_transactions
     else:
         return False, 0
@@ -168,6 +171,7 @@ def main(args):
     transactions = get_recent_transactions(start_date, end_date)
     if len(transactions) == 0:
         print(f"{now}: No new transactions.")
+        return
 
     # save to raw ledger, keep in memory
     raw_transactions, num_new = raw_ledger(transactions)
