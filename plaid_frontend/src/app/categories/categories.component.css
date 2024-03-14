@@ -1,0 +1,14 @@
+.category-card {
+    margin: 2%;
+    height: fit-content;
+}
+
+.category-card-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.category-chart {
+    flex: 1;
+    height: 100%;
+}

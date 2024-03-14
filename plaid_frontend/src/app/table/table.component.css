@@ -1,0 +1,14 @@
+.table-card {
+    margin: 2%;
+}
+
+.table-card-content {
+    max-height: 300px;
+    align-items: center;
+    overflow-y: scroll;
+}
+
+.spacer {
+    flex: 1 1 auto;
+    margin-bottom: 0;
+}
