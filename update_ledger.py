@@ -19,6 +19,9 @@ SKIP_THESE = {
     "TD BANK"
 }
 
+COLUMNS = ["date", "authorized_date", "transaction_id",
+           "name", "merchant_name", "plaid_categories", "amount"]
+
 
 def start_plaid():
     """"
@@ -123,7 +126,7 @@ def tr_list_to_df(tr_list):
     return tr_df
 
 
-def append_to_raw_ledger(raw_ledger, sync_response):
+def append_to_raw_ledger(raw_ledger: pd.DataFrame, sync_response: list):
     """
     Adds the new transactions to a 'raw', un-categorized ledger
     Returns the new full raw ledger, and a list with [additions, mods, deletions] 
@@ -132,25 +135,32 @@ def append_to_raw_ledger(raw_ledger, sync_response):
     num_modifications = 0
     num_deletions = 0
 
-    # deal with additions
-    if len(sync_response[0]) != 0:
-        recent_df = tr_list_to_df(sync_response[0])
-        raw_ledger = pd.concat((raw_ledger, recent_df))
+    # First time creating raw ledger, only going to have additions
+    if raw_ledger.shape[0] == 0:
+        raw_ledger = tr_list_to_df(sync_response[0])
         num_additions = len(sync_response[0])
+    else:
+        # deal with additions
+        if len(sync_response[0]) != 0:
+            recent_df = tr_list_to_df(sync_response[0])
+            raw_ledger = pd.concat((raw_ledger, recent_df))
+            num_additions = len(sync_response[0])
 
-    # deal with modifications [delete and then add modified]
-    if len(sync_response[1]) != 0:
-        to_delete = [tr['transaction_id'] for tr in sync_response[1]]
-        raw_ledger = raw_ledger[~raw_ledger['transaction_id'].isin(to_delete)]
-        modified_df = tr_list_to_df(sync_response[0])
-        raw_ledger = pd.concat((raw_ledger, modified_df))
-        num_modifications = len(sync_response[1])
+        # deal with modifications [delete and then add modified]
+        if len(sync_response[1]) != 0:
+            to_delete = [tr['transaction_id'] for tr in sync_response[1]]
+            raw_ledger = raw_ledger[~raw_ledger['transaction_id'].isin(
+                to_delete)]
+            modified_df = tr_list_to_df(sync_response[0])
+            raw_ledger = pd.concat((raw_ledger, modified_df))
+            num_modifications = len(sync_response[1])
 
-    # deal with deletions
-    if len(sync_response[2]) != 0:
-        to_delete = [tr['transaction_id'] for tr in sync_response[2]]
-        raw_ledger = raw_ledger[~raw_ledger['transaction_id'].isin(to_delete)]
-        num_deletions = len(sync_response[2])
+        # deal with deletions
+        if len(sync_response[2]) != 0:
+            to_delete = [tr['transaction_id'] for tr in sync_response[2]]
+            raw_ledger = raw_ledger[~raw_ledger['transaction_id'].isin(
+                to_delete)]
+            num_deletions = len(sync_response[2])
 
     updates = [num_additions, num_modifications, num_deletions]
 
@@ -162,6 +172,7 @@ def append_to_raw_ledger(raw_ledger, sync_response):
 
     raw_ledger.sort_values(by='authorized_date', inplace=True, ascending=False)
     raw_ledger.drop_duplicates(subset="transaction_id")
+    raw_ledger = raw_ledger[COLUMNS]
 
     return raw_ledger, updates
 
@@ -203,6 +214,7 @@ def main(args):
         cursor = open('.cursor', 'r').read()
     except:
         cursor = ""
+        first_write = True
 
     # get the recent transactions
     sync_transactions_response, cursor = get_recent_transactions(cursor)
@@ -217,7 +229,11 @@ def main(args):
         return
 
     # save to raw ledger, keep in memory
-    curr_raw_ledger = pd.read_csv('./raw_ledger.csv')
+    if first_write:
+        curr_raw_ledger = pd.DataFrame()
+    else:
+        curr_raw_ledger = pd.read_csv('./raw_ledger.csv')
+
     raw_transactions, updates = append_to_raw_ledger(
         curr_raw_ledger, sync_transactions_response)
     if not debug:
