@@ -5,6 +5,7 @@ import os.path
 import json
 import os
 from plaid.model.transactions_get_request_options import TransactionsGetRequestOptions
+from plaid.model.transactions_sync_request import TransactionsSyncRequest
 from plaid.model.transactions_get_request import TransactionsGetRequest
 from collections import defaultdict
 from plaid.api import plaid_api
@@ -12,11 +13,11 @@ from datetime import datetime as dt
 from argparse import ArgumentParser
 from dotenv import load_dotenv
 
-SKIP_THESE = [
+SKIP_THESE = {
     "Recurring Automatic Payment",
     "TD BANK PAYMENT",
     "TD BANK"
-]
+}
 
 
 def start_plaid():
@@ -35,7 +36,7 @@ def start_plaid():
     return client
 
 
-def get_recent_transactions(start, end):
+def get_recent_transactions(cursor=None):
     """
     Retrieve all transactions between two dates
     start: start date (datetime.date)
@@ -45,30 +46,27 @@ def get_recent_transactions(start, end):
     """
     client = start_plaid()
 
-    request = TransactionsGetRequest(
-        access_token=os.getenv('ACCESS_TOKEN'),
-        start_date=start,
-        end_date=end,
-    )
-    response = client.transactions_get(request)
-    transactions = response['transactions']
-
-    # the transactions in the response are paginated, so make multiple calls while increasing the offset to
-    # retrieve all transactions
-    while len(transactions) < response['total_transactions']:
-        options = TransactionsGetRequestOptions()
-        options.offset = len(transactions)
-
-        request = TransactionsGetRequest(
+    # New transaction updates since "cursor"
+    added = []
+    modified = []
+    removed = []  # Removed transaction ids
+    has_more = True
+    # Iterate through each page of new transaction updates for item
+    while has_more:
+        request = TransactionsSyncRequest(
             access_token=os.getenv('ACCESS_TOKEN'),
-            start_date=start,
-            end_date=end,
-            options=options
+            cursor=cursor,
         )
-        response = client.transactions_get(request)
-        transactions += response['transactions']
+        response = client.transactions_sync(request)
+        # Add this page of results
+        added.extend(response['added'])
+        modified.extend(response['modified'])
+        removed.extend(response['removed'])
+        has_more = response['has_more']
+        # Update cursor to the next cursor
+        cursor = response['next_cursor']
 
-    return transactions
+    return [added, modified, removed], cursor
 
 
 def categorize(trans_row):
@@ -101,19 +99,17 @@ def categorize(trans_row):
     return "Misc"
 
 
-def raw_ledger(transactions):
-    """
-    Returns a 'raw', un-categorized ledger to 'raw_ledger.csv'
-
-    TODO: maybe there are  optimizations that can be done here
-    """
+def tr_list_to_df(tr_list):
     ddict = defaultdict(list)
-    for tr in transactions:
+    for tr in tr_list:
         ddict['date'].append(tr['date'])
-        ddict['authorized_date'].append(tr['authorized_date'])
         ddict['transaction_id'].append(tr['transaction_id'])
         ddict['name'].append(tr['name'])
-        ddict['merchant_name'].append(tr['merchant_name'])
+
+        merchant_name = tr['merchant_name'] if tr['merchant_name'] != None else tr['name']
+        authorized_date = tr['authorized_date'] if tr['authorized_date'] != None else tr['date']
+        ddict['merchant_name'].append(merchant_name)
+        ddict['authorized_date'].append(authorized_date)
 
         if tr['category'] is not None:
             ddict['plaid_categories'].append('-'.join(tr['category']))
@@ -121,24 +117,53 @@ def raw_ledger(transactions):
             ddict['plaid_categories'].append("")
         ddict['amount'].append(-tr['amount'])
 
-    recent_df = pd.DataFrame(ddict)
-    recent_df['authorized_date'].fillna(recent_df['date'])
+    tr_df = pd.DataFrame(ddict)
+    tr_df['authorized_date'].fillna(tr_df['date'])
 
-    df = pd.read_csv("./raw_ledger.csv")
-    curr_num_transactions = df.shape[0]
-    df = pd.concat((df, recent_df))
-    df.drop_duplicates(subset=['transaction_id'], inplace=True)
-    new_transactions = df.shape[0] - curr_num_transactions
-    if new_transactions > 0:
-        df['date'] = pd.to_datetime(
-            df['date'], format="%Y-%m-%d", errors='coerce').dt.date
-        df['authorized_date'] = pd.to_datetime(
-            df['authorized_date'], format="%Y-%m-%d", errors='coerce').dt.date
+    return tr_df
 
-        df.sort_values(by='authorized_date', inplace=True, ascending=False)
-        return df, new_transactions
-    else:
-        return False, 0
+
+def append_to_raw_ledger(raw_ledger, sync_response):
+    """
+    Adds the new transactions to a 'raw', un-categorized ledger
+    Returns the new full raw ledger, and a list with [additions, mods, deletions] 
+    """
+    num_additions = 0
+    num_modifications = 0
+    num_deletions = 0
+
+    # deal with additions
+    if len(sync_response[0]) != 0:
+        recent_df = tr_list_to_df(sync_response[0])
+        raw_ledger = pd.concat((raw_ledger, recent_df))
+        num_additions = len(sync_response[0])
+
+    # deal with modifications [delete and then add modified]
+    if len(sync_response[1]) != 0:
+        to_delete = [tr['transaction_id'] for tr in sync_response[1]]
+        raw_ledger = raw_ledger[~raw_ledger['transaction_id'].isin(to_delete)]
+        modified_df = tr_list_to_df(sync_response[0])
+        raw_ledger = pd.concat((raw_ledger, modified_df))
+        num_modifications = len(sync_response[1])
+
+    # deal with deletions
+    if len(sync_response[2]) != 0:
+        to_delete = [tr['transaction_id'] for tr in sync_response[2]]
+        raw_ledger = raw_ledger[~raw_ledger['transaction_id'].isin(to_delete)]
+        num_deletions = len(sync_response[2])
+
+    updates = [num_additions, num_modifications, num_deletions]
+
+    # format dates
+    raw_ledger['date'] = pd.to_datetime(
+        raw_ledger['date'], format="%Y-%m-%d", errors='coerce').dt.date
+    raw_ledger['authorized_date'] = pd.to_datetime(
+        raw_ledger['authorized_date'], format="%Y-%m-%d", errors='coerce').dt.date
+
+    raw_ledger.sort_values(by='authorized_date', inplace=True, ascending=False)
+    raw_ledger.drop_duplicates(subset="transaction_id")
+
+    return raw_ledger, updates
 
 
 def clean_ledger(transactions) -> None:
@@ -154,38 +179,57 @@ def clean_ledger(transactions) -> None:
     return transactions
 
 
+def is_sync_response_empty(response):
+    """
+    response is a 2d array of [added, modified, removed]
+    """
+    for arr in response:
+        if len(arr) != 0:
+            return False
+
+    return True
+
+
 def main(args):
     debug = args.debug
     if debug:
         print("WE ARE IN DEBUG MODE BABY")
 
     load_dotenv()
-
-    # read the .date file to find out where to start analysis
-    date_str = open('.date', 'r').read()
-    start_date = dt.strptime(date_str, '%Y-%m-%d').date()
     now = dt.now()
-    end_date = now.date()
+
+    # get cursor if it exists
+    try:
+        cursor = open('.cursor', 'r').read()
+    except:
+        cursor = ""
 
     # get the recent transactions
-    transactions = get_recent_transactions(start_date, end_date)
-    if len(transactions) == 0:
-        print(f"{now}: No new transactions.")
+    sync_transactions_response, cursor = get_recent_transactions(cursor)
+
+    # save cursor
+    if not debug:
+        open('.cursor', 'w').write(cursor)
+
+    # determine if there is anything else to do
+    if is_sync_response_empty(sync_transactions_response):
+        print(f"{now}: No new updates.")
         return
 
     # save to raw ledger, keep in memory
-    raw_transactions, num_new = raw_ledger(transactions)
-    if num_new > 0:
+    curr_raw_ledger = pd.read_csv('./raw_ledger.csv')
+    raw_transactions, updates = append_to_raw_ledger(
+        curr_raw_ledger, sync_transactions_response)
+    if not debug:
         raw_transactions.to_csv('./raw_ledger.csv', index=False)
         # categorize each transaction
         clean_transactions = clean_ledger(raw_transactions)
         clean_transactions.to_csv('./clean_ledger.csv', index=False)
-
-        print(f"{now}: Added {num_new} new transactions.")
     else:
-        print(f"{now}: No new transactions.")
+        raw_transactions.to_csv('./DEBUG_raw_ledger.csv', index=False)
 
-    open('.date', 'w').write(end_date.strftime('%Y-%m-%d'))
+    print(
+        f"{now}: Added {updates[0]}, Modified {updates[1]}, Deleted {updates[2]}")
 
 
 if __name__ == '__main__':
