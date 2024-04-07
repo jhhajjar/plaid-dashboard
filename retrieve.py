@@ -129,4 +129,4 @@ def get_df():
     return json_response
 
 
-app.run(debug=True)
+app.run()
