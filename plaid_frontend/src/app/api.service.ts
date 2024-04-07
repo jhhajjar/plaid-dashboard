@@ -13,7 +13,7 @@ export class ApiService {
         private httpClient: HttpClient
     ) { }
 
-    backendURL = "http://127.0.0.1:5000"
+    backendURL = "http://plaid-dashboard-production.up.railway.app"
 
     getMainResponse(start: string, end: string = ""): Observable<MainResponse> {
         let url = end != "" ? `${this.backendURL}/getData?start=${start}&end=${end}` : `${this.backendURL}/getData?start=${start}`
