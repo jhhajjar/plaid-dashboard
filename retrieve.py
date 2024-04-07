@@ -1,14 +1,46 @@
 import pandas as pd
 import numpy as np
 import calendar
+import os
+import boto3
 from dateutil.relativedelta import relativedelta
 from flask_cors import CORS
 from datetime import datetime as dt
+from dotenv import load_dotenv
 from flask import Flask, jsonify, request
+
+
+def read_file_s3(file_name, bucket_name):
+    """Read transaction list from an S3 bucket
+
+    :param file_name: File to read
+    :param bucket: Bucket to read from
+    :param object_name: S3 object name. If not specified then file_name is used
+    :return: True if file was uploaded, else False
+    """
+    access_key = os.getenv('S3_ACCESS_KEY')
+    secret_key = os.getenv('S3_SECRET_KEY')
+
+    s3_client = boto3.client(
+        "s3",
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key,
+    )
+    try:
+        response = s3_client.get_object(Bucket=bucket_name, Key=file_name)
+        df = pd.read_csv(response['Body'])
+    except Exception as e:
+        print(e)
+        return pd.DataFrame(columns=COLUMNS)
+
+    return df
+
 
 app = Flask(__name__)
 CORS(app)
-full_df = pd.read_csv('./clean_ledger.csv')
+load_dotenv()
+s3_bucket = os.getenv("S3_BUCKET")
+full_df = read_file_s3('clean_ledger.csv', s3_bucket)
 
 
 def _apply_temporal_filter(start, end=None):
