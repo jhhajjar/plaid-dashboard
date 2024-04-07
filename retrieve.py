@@ -12,7 +12,7 @@ from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 CORS(app)
-full_df = read_file_s3('clean_ledger.csv')
+full_df = read_file_s3('demo_ledger.csv')
 
 
 def _apply_temporal_filter(start, end=None):
