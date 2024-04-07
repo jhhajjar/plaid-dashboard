@@ -1,17 +1,16 @@
 import plaid
 import pandas as pd
-import numpy as np
 import os.path
 import json
 import os
-from plaid.model.transactions_get_request_options import TransactionsGetRequestOptions
+import boto3
 from plaid.model.transactions_sync_request import TransactionsSyncRequest
-from plaid.model.transactions_get_request import TransactionsGetRequest
 from collections import defaultdict
 from plaid.api import plaid_api
 from datetime import datetime as dt
 from argparse import ArgumentParser
 from dotenv import load_dotenv
+from io import StringIO
 
 SKIP_THESE = {
     "Recurring Automatic Payment",
@@ -201,6 +200,62 @@ def is_sync_response_empty(response):
     return True
 
 
+def upload_file_s3(df, bucket, file_name):
+    """Upload a file to an S3 bucket
+
+    :param file_name: File to upload
+    :param bucket: Bucket to upload to
+    :param object_name: S3 object name. If not specified then file_name is used
+    :return: True if file was uploaded, else False
+    """
+
+    buffer = StringIO()
+    df.to_csv(buffer, index=False)
+
+    # Upload the file
+    access_key = os.getenv('S3_ACCESS_KEY')
+    secret_key = os.getenv('S3_SECRET_KEY')
+
+    s3_client = boto3.client(
+        "s3",
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key,
+    )
+    try:
+        s3_client.put_object(Bucket=bucket, Key=file_name,
+                             Body=buffer.getvalue())
+    except Exception as e:
+        print(e)
+        return False
+    return True
+
+
+def read_file_s3(file_name, bucket_name):
+    """Read transaction list from an S3 bucket
+
+    :param file_name: File to read
+    :param bucket: Bucket to read from
+    :param object_name: S3 object name. If not specified then file_name is used
+    :return: True if file was uploaded, else False
+    """
+    access_key = os.getenv('S3_ACCESS_KEY')
+    secret_key = os.getenv('S3_SECRET_KEY')
+
+    s3_client = boto3.client(
+        "s3",
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key,
+    )
+    try:
+        response = s3_client.get_object(Bucket=bucket_name, Key=file_name)
+        df = pd.read_csv(response['Body'])
+    except Exception as e:
+        print(e)
+        return pd.DataFrame(columns=COLUMNS)
+
+    return df
+
+
 def main(args):
     debug = args.debug
     if debug:
@@ -228,19 +283,21 @@ def main(args):
         print(f"{now}: No new updates.")
         return
 
+    s3_bucket_name = os.getenv("S3_BUCKET")
     # save to raw ledger, keep in memory
     if first_write:
         curr_raw_ledger = pd.DataFrame()
     else:
-        curr_raw_ledger = pd.read_csv('./raw_ledger.csv')
+        curr_raw_ledger = read_file_s3("raw_ledger.csv", s3_bucket_name)
 
     raw_transactions, updates = append_to_raw_ledger(
         curr_raw_ledger, sync_transactions_response)
     if not debug:
-        raw_transactions.to_csv('./raw_ledger.csv', index=False)
+        upload_file_s3(raw_transactions, s3_bucket_name, "raw_ledger.csv")
+
         # categorize each transaction
         clean_transactions = clean_ledger(raw_transactions)
-        clean_transactions.to_csv('./clean_ledger.csv', index=False)
+        upload_file_s3(clean_transactions, s3_bucket_name, "clean_ledger.csv")
     else:
         raw_transactions.to_csv('./DEBUG_raw_ledger.csv', index=False)
 
