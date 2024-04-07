@@ -21,6 +21,7 @@ def upload_file_s3(df, file_name):
     df.to_csv(buffer, index=False)
 
     # Upload the file
+    load_dotenv()
     access_key = os.getenv('S3_ACCESS_KEY')
     secret_key = os.getenv('S3_SECRET_KEY')
     bucket = os.getenv('S3_BUCKET')
@@ -46,6 +47,7 @@ def read_file_s3(file_name):
     :param object_name: S3 object name. If not specified then file_name is used
     :return: True if file was uploaded, else False
     """
+    load_dotenv()
     access_key = os.getenv('S3_ACCESS_KEY')
     secret_key = os.getenv('S3_SECRET_KEY')
     bucket_name = os.getenv('S3_BUCKET')
