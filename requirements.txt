@@ -16,7 +16,7 @@ nulltype==2.3.1
 numpy==1.24.1
 oauthlib==3.2.2
 pandas==1.5.3
-plaid-python==9.1.0
+plaid-python==20.0.1
 protobuf==4.21.12
 pyasn1==0.4.8
 pyasn1-modules==0.2.8

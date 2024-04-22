@@ -10,7 +10,7 @@ from plaid.api import plaid_api
 from datetime import datetime as dt
 from argparse import ArgumentParser
 from dotenv import load_dotenv
-from aws_utils import upload_file_s3, read_file_s3
+from aws_utils import upload_file_s3, read_file_s3, COLUMNS
 from io import StringIO
 
 SKIP_THESE = {
@@ -209,6 +209,7 @@ def main(args):
     # get cursor if it exists
     try:
         cursor = open('.cursor', 'r').read()
+        first_write = False
     except:
         cursor = ""
         first_write = True
