@@ -168,7 +168,7 @@ def append_to_raw_ledger(raw_ledger: pd.DataFrame, sync_response: list):
         raw_ledger['authorized_date'], format="%Y-%m-%d", errors='coerce').dt.date
 
     raw_ledger.sort_values(by='authorized_date', inplace=True, ascending=False)
-    raw_ledger.drop_duplicates(subset="transaction_id")
+    raw_ledger = raw_ledger.drop_duplicates(subset="transaction_id")
     raw_ledger = raw_ledger[COLUMNS]
 
     return raw_ledger, updates
