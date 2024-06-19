@@ -1,4 +1,4 @@
-import { Component, Input, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, Output, SimpleChanges } from '@angular/core';
 import { Transaction } from '../transaction';
 
 @Component({
@@ -9,9 +9,11 @@ import { Transaction } from '../transaction';
 export class TableComponent {
   // json string of the transactions df
   @Input() data: Transaction[] = []
+  @Output() transactionsChange: EventEmitter<Transaction[]> = new EventEmitter<Transaction[]>()
+
   jsonData: Transaction[] = []
   jsonDataBackup: Transaction[] = []
-  displayedColumns = ['date', 'name', 'category', 'amount']
+  displayedColumns = ['date', 'name', 'category', 'amount', 'included']
   filterOptions: string[] = ["All"]
   selectedValue: string = "All"
 
@@ -27,6 +29,10 @@ export class TableComponent {
     } else {
       this.jsonData = this.jsonDataBackup.filter(tr => tr.category == this.selectedValue)
     }
+  }
+
+  changeValue() {
+    this.transactionsChange.emit(this.jsonData)
   }
 
   getCategories() {

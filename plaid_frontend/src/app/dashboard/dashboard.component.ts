@@ -9,9 +9,9 @@ import { Category } from '../category';
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit {
+  allTransactions: Transaction[] = []
   transactions: Transaction[] = []
   numberOfDays: number = 1
-  categories: Category[] = []
   compareCategories: Category[] = []
   incomeDataObject: any = {}
   spendingDataObject: any = {}
@@ -26,29 +26,30 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     let today = new Date()
-    today.setMonth(today.getMonth() - 3)
+    // today.setMonth(today.getMonth() - 1)
     this.endMonth = (today.getMonth() + 1).toString() // indexed at 0
     this.endYear = today.getFullYear().toString()
 
-    // today.setMonth(today.getMonth() - 1)
     this.startMonth = (today.getMonth() + 1).toString() // javascript thinks january is 0
     this.startYear = today.getFullYear().toString()
     this.callAPIForMainResponse()
   }
 
+  updateVariables(updatedTransactions: Transaction[]) {
+    updatedTransactions = updatedTransactions.filter(tr => tr['include_in_calc'] == true)
+    this.transactions = updatedTransactions
+    this.calculateSums()
+  }
+
   callAPIForMainResponse() {
     this.apiClient.getMainResponse(`${this.startYear}-${this.startMonth}`, `${this.endYear}-${this.endMonth}`).subscribe(
       response => {
-        this.transactions = JSON.parse(response.transactions)
+        this.allTransactions = JSON.parse(response.transactions)
+        this.transactions = this.allTransactions
         this.numberOfDays = response.numberOfDays
-        this.categories = JSON.parse(response.categories)
         this.compareCategories = JSON.parse(response.compareCategories)
 
         this.transactions.sort((a, b) => a.authorized_date - b.authorized_date)
-        // console.log(this.transactions.length)
-        // this.transactions = this.transactions.filter(tr => (!tr.name.toLowerCase().includes("td bank payment")) && (!tr.name.toLowerCase().includes("recurring automatic payment")))
-        // console.log(this.transactions.length)
-        // TODO: categories is being populated from the backend, so we cannot really affect it with the filters. need to figure oout how to change that
 
         this.calculateSums()
       }

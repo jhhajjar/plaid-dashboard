@@ -18,10 +18,25 @@ export class CategoriesComponent {
   chartType: ChartType = 'bar';
 
   ngOnChanges(changes: SimpleChanges): void {
-    this.makePieChart()
+    let grouped = this.data.reduce((acc: { [key: string]: number }, val) => {
+      if (val.category === "Income") {
+        return acc
+      }
+      if (!acc[val.category]) {
+        acc[val.category] = 0
+      }
+      acc[val.category] += val.amount
+      return acc
+    }, {})
+    let result = Object.keys(grouped).map((category) => ({
+      category,
+      amount: grouped[category]
+    }))
+    result = result.sort((a, b) => a.category.localeCompare(b.category))
+    this.makePieChart(result)
   }
 
-  makePieChart() {
+  makePieChart(data: { category: string, amount: number }[]) {
     this.chartOptions = {
       scales: {
         y: {
@@ -37,10 +52,10 @@ export class CategoriesComponent {
       },
     }
     this.chartData = {
-      labels: this.data.map(item => item.category),
+      labels: data.map(item => item.category),
       datasets: [
         {
-          data: this.data.map(item => item.amount),
+          data: data.map(item => item.amount),
         },
       ],
     };

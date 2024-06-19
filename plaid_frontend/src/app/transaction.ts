@@ -6,5 +6,6 @@ export interface Transaction {
     merchant_name: string,
     plaid_categories: string[],
     category: string,
-    amount: number
+    amount: number,
+    include_in_calc: boolean
 }

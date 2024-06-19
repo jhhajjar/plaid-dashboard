@@ -114,15 +114,11 @@ def get_df():
 
     # apply filter
     df = apply_filter(df)
-
-    # categories
-    categories = df.groupby(by='category')['amount'].sum().sort_values()
-    categories = categories.drop('Income')
+    df['include_in_calc'] = 1
 
     json_response = {
         'transactions': df.to_json(orient='records'),
         'numberOfDays': number_of_days,
-        'categories': categories.reset_index().to_json(orient='records'),
         'compareCategories': compare_categories(df, start, end).reset_index().to_json(orient='records')
     }
 

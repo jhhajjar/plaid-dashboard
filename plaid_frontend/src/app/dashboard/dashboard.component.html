@@ -74,8 +74,9 @@
         </div>
     </div>
     <div class="second-row">
-        <app-categories class="categories" [data]="this.categories"></app-categories>
-        <app-table class="table" [data]="this.transactions"></app-table>
+        <app-categories class="categories" [data]="this.transactions"></app-categories>
+        <app-table class="table" [data]="this.allTransactions"
+            (transactionsChange)="updateVariables($event)"></app-table>
     </div>
     <div>
     </div>
