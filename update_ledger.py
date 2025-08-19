@@ -1,17 +1,14 @@
 import plaid
 import pandas as pd
-import os.path
 import json
 import os
-import boto3
 from plaid.model.transactions_sync_request import TransactionsSyncRequest
 from collections import defaultdict
 from plaid.api import plaid_api
+from aws_utils import upload_file_s3, read_file_s3, COLUMNS
 from datetime import datetime as dt
 from argparse import ArgumentParser
 from dotenv import load_dotenv
-from aws_utils import upload_file_s3, read_file_s3, COLUMNS
-from io import StringIO
 
 SKIP_THESE = {
     "Recurring Automatic Payment",
@@ -27,8 +24,8 @@ def start_plaid():
     configuration = plaid.Configuration(
         host=plaid.Environment.Development,
         api_key={
-            'clientId': os.getenv("CLIENT_ID"),
-            'secret': os.getenv("SECRET"),
+            'clientId': os.getenv("PLAID_CLIENT_ID"),
+            'secret': os.getenv("PLAID_SECRET"),
         }
     )
     api_client = plaid.ApiClient(configuration)
@@ -36,7 +33,7 @@ def start_plaid():
     return client
 
 
-def get_recent_transactions(cursor=None):
+def get_recent_transactions(cursor=""):
     """
     Retrieve all transactions between two dates
     start: start date (datetime.date)
@@ -54,7 +51,7 @@ def get_recent_transactions(cursor=None):
     # Iterate through each page of new transaction updates for item
     while has_more:
         request = TransactionsSyncRequest(
-            access_token=os.getenv('ACCESS_TOKEN'),
+            access_token=os.getenv('PLAID_ACCESS_TOKEN'),
             cursor=cursor,
         )
         response = client.transactions_sync(request)
