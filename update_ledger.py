@@ -22,7 +22,7 @@ def start_plaid():
     Starts plaid client
     """
     configuration = plaid.Configuration(
-        host=plaid.Environment.Development,
+        host=plaid.Environment.Production,
         api_key={
             'clientId': os.getenv("PLAID_CLIENT_ID"),
             'secret': os.getenv("PLAID_SECRET"),
@@ -44,6 +44,7 @@ def get_recent_transactions(cursor=""):
     client = start_plaid()
 
     # New transaction updates since "cursor"
+    curr_cursor = cursor
     added = []
     modified = []
     removed = []  # Removed transaction ids
@@ -52,7 +53,8 @@ def get_recent_transactions(cursor=""):
     while has_more:
         request = TransactionsSyncRequest(
             access_token=os.getenv('PLAID_ACCESS_TOKEN'),
-            cursor=cursor,
+            cursor=curr_cursor,
+            count=500,
         )
         response = client.transactions_sync(request)
         # Add this page of results
@@ -61,9 +63,9 @@ def get_recent_transactions(cursor=""):
         removed.extend(response['removed'])
         has_more = response['has_more']
         # Update cursor to the next cursor
-        cursor = response['next_cursor']
+        curr_cursor = response['next_cursor']
 
-    return [added, modified, removed], cursor
+    return [added, modified, removed], curr_cursor
 
 
 def categorize(trans_row):
