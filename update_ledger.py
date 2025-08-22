@@ -240,7 +240,7 @@ def main(args):
         clean_transactions = clean_ledger(raw_transactions)
         upload_file_s3(clean_transactions, "clean_ledger.csv")
     else:
-        raw_transactions.to_csv('./DEBUG_raw_ledger.csv', index=False)
+        raw_transactions.to_csv('./raw_ledger.scratch.csv', index=False)
 
     print(
         f"{now}: Added {updates[0]}, Modified {updates[1]}, Deleted {updates[2]}")
