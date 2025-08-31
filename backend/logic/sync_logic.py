@@ -1,15 +1,15 @@
 import os
 from plaid.model.transactions_sync_request import TransactionsSyncRequest
-from backend.logic.common import start_plaid, read_cursor, save_cursor
+from logic.common import start_plaid, read_cursor, save_cursor
 from plaid.api import plaid_api
 
-from backend.logic.transaction_logic import apply_additions, apply_updates, apply_deletions
-from backend.data_access.transaction_repo import get_all_transactions
+from logic.transaction_logic import apply_additions, apply_updates, apply_deletions
+from data_access.transaction_repo import get_all_transactions, save_transactions
 
 
 def transaction_sync(plaid_client: plaid_api.PlaidApi, cursor: str = ""):
     """
-    
+    Calls transaction sync plaid endpoint
     """
     curr_cursor = cursor
     added = []
@@ -53,5 +53,8 @@ def plaid_sync():
     transactions = apply_updates(transactions, modified)
     transactions = apply_deletions(transactions, removed)
     
+    # write
+    save_transactions(transactions)
+    
     # return new transactions
-    return transactions # TODO: Mapper
+    return transactions

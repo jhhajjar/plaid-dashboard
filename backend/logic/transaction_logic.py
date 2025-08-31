@@ -1,3 +1,6 @@
+from models.Transaction import Transaction, TransactionCategory
+
+
 def apply_additions(transactions, additions):
     transactions.extend(additions)
     return drop_duplicates(transactions)
@@ -39,3 +42,27 @@ def drop_duplicates(transactions):
             seen_pairs.add(key)
             
     return de_duped_transactions
+
+def get_merchant_name(tr):
+    return tr['merchant_name'] if tr['merchant_name'] != None else tr['name']
+
+def get_authorized_date(tr):
+    return tr['authorized_date'] if tr['authorized_date'] != None else tr['date']
+
+def get_category(tr):
+    return TransactionCategory.FOOD
+
+def map_transaction_to_dto(transaction):
+    transaction_id = transaction['transaction_id']
+    merchant_name = get_merchant_name(transaction)
+    date = get_authorized_date(transaction)
+    category = get_category(transaction)
+    amount = transaction['amount']
+    
+    return Transaction(
+        date,
+        transaction_id,
+        merchant_name,
+        category,
+        amount
+    )
