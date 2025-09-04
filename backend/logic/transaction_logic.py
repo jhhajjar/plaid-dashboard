@@ -40,11 +40,14 @@ def get_merchant_name(tr) -> str:
 def get_authorized_date(tr) -> datetime:
     return tr['authorized_date'] if tr['authorized_date'] != None else tr['date']
 
+def map_plaid_category_to_app_category(category: str):
+    return category.replace('_', ' ')
+
 def map_transaction_to_dto(transaction: TransactionEntity) -> TransactionDTO:
     transaction_id = transaction.id
     merchant_name = get_merchant_name(transaction)
     date = get_authorized_date(transaction)
-    category = transaction.category
+    category = map_plaid_category_to_app_category(transaction.category)
     amount = transaction.amount
     
     return TransactionDTO(
