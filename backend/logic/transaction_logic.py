@@ -1,4 +1,5 @@
-from models.Transaction import Transaction, TransactionCategory
+from datetime import datetime
+from models.Transaction import TransactionDTO, TransactionEntity
 
 
 def apply_additions(transactions, additions):
@@ -6,17 +7,7 @@ def apply_additions(transactions, additions):
     return drop_duplicates(transactions)
 
 def apply_updates(transactions, updates):
-    updated_transactions = []
-    update_hashes = [gen_key(tr) for tr in updates]
-    
-    for tr in transactions:
-        if gen_key(tr) in update_hashes:
-            # this is a stale transaction, do not append
-            continue
-        else:
-            updated_transactions.append(tr)
-            
-    return apply_additions(updated_transactions, updates)
+    return apply_additions(apply_deletions(transactions, updates), updates)
 
 def apply_deletions(transactions, deletions):
     keys_to_delete = [
@@ -43,26 +34,55 @@ def drop_duplicates(transactions):
             
     return de_duped_transactions
 
-def get_merchant_name(tr):
+def get_merchant_name(tr) -> str:
     return tr['merchant_name'] if tr['merchant_name'] != None else tr['name']
 
-def get_authorized_date(tr):
+def get_authorized_date(tr) -> datetime:
     return tr['authorized_date'] if tr['authorized_date'] != None else tr['date']
 
-def get_category(tr):
-    return TransactionCategory.FOOD
-
-def map_transaction_to_dto(transaction):
-    transaction_id = transaction['transaction_id']
+def map_transaction_to_dto(transaction: TransactionEntity) -> TransactionDTO:
+    transaction_id = transaction.id
     merchant_name = get_merchant_name(transaction)
     date = get_authorized_date(transaction)
-    category = get_category(transaction)
-    amount = transaction['amount']
+    category = transaction.category
+    amount = transaction.amount
     
-    return Transaction(
+    return TransactionDTO(
         date,
         transaction_id,
         merchant_name,
         category,
         amount
     )
+    
+def map_transaction_to_transaction_entity(tr) -> TransactionEntity:
+    trEntity = TransactionEntity()
+    trEntity.id = tr['transaction_id']
+    trEntity.account_id = tr['account_id']
+    trEntity.amount = tr['amount']
+    trEntity.authorized_date = tr['authorized_date']
+    trEntity.authorized_datetime = tr['authorized_datetime']
+    trEntity.date = tr['date']
+    trEntity.datetime = tr['datetime']
+    trEntity.iso_currency_code = tr['iso_currency_code']
+    trEntity.logo_url = tr['logo_url']
+    trEntity.merchant_entity_id = tr['merchant_entity_id']
+    trEntity.merchant_name = tr['merchant_name']
+    trEntity.name = tr['name']
+    trEntity.payment_channel = tr['payment_channel']
+    trEntity.pending = tr['pending']
+    trEntity.transaction_code = tr['transaction_code']
+    trEntity.website = tr['website']
+    
+    trEntity.address = tr['location']['address']
+    trEntity.city = tr['location']['city']
+    trEntity.country = tr['location']['country']
+    trEntity.lat = tr['location']['lat']
+    trEntity.lon = tr['location']['lon']
+    trEntity.postal_code = tr['location']['postal_code']
+    trEntity.region = tr['location']['region']
+    
+    trEntity.category = tr['personal_finance_category']['detailed'] # TODO mapper
+    
+    return trEntity
+    

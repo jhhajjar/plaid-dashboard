@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint
 
 from logic.sync_logic import plaid_sync
 from logic.transaction_logic import map_transaction_to_dto
@@ -9,11 +9,11 @@ sync_bp = Blueprint("sync", __name__)
 def sync_request():
     # call plaid sync
     transactions = plaid_sync()
-    print(transactions[0])
-    print(set([tr['account_id'] for tr in transactions]))
     
-    transactions = sorted(transactions, key=lambda x: x['date'], reverse=True)
+    # map the transactions
+    mapped_transactions = [map_transaction_to_dto(tr) for tr in transactions]
     
-    mapped = [map_transaction_to_dto(tr) for tr in transactions]
+    # sort by date
+    sorted_mapped_transactions = sorted(mapped_transactions, key=lambda x: x.date, reverse=True)
     
-    return mapped
+    return sorted_mapped_transactions
