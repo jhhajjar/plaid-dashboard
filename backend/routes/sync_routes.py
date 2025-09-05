@@ -1,7 +1,6 @@
-from flask import Blueprint
-
-from logic.sync_logic import plaid_sync
 from logic.transaction_logic import map_transaction_to_dto
+from logic.sync_logic import plaid_sync
+from flask import Blueprint
 
 sync_bp = Blueprint("sync", __name__)
 
