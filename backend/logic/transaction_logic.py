@@ -34,11 +34,11 @@ def drop_duplicates(transactions):
             
     return de_duped_transactions
 
-def get_merchant_name(tr) -> str:
-    return tr['merchant_name'] if tr['merchant_name'] != None else tr['name']
+def get_merchant_name(tr: TransactionEntity) -> str:
+    return tr.merchant_name if tr.merchant_name != None else tr.name
 
-def get_authorized_date(tr) -> datetime:
-    return tr['authorized_date'] if tr['authorized_date'] != None else tr['date']
+def get_authorized_date(tr: TransactionEntity) -> datetime:
+    return tr.authorized_date if tr.authorized_date != None else tr.date
 
 def map_plaid_category_to_app_category(category: str):
     return category.replace('_', ' ')

@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 
@@ -13,7 +14,12 @@ def get_all_transactions():
         
     return transactions
 
+def custom_serializer(obj):
+    if isinstance(obj, (datetime.date, datetime.datetime)):
+        return obj.isoformat()
+    raise TypeError(f"Type {type(obj)} not serializable")
+
 def save_transactions(trs):
-    json_trs = [vars(tr) for tr in trs]
+    json_trs = [tr.to_dict() for tr in trs]
     with open(TRANSACTION_FILE_PATH, 'w') as fp:
-        json.dump(json_trs, fp, indent=2, default=str)
+        json.dump(json_trs, fp, default=custom_serializer, indent=2)

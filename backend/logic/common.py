@@ -33,7 +33,6 @@ def read_cursor():
 
 def save_cursor(cursor: str):
     try:
-        return
         open(CURSOR_PATH).write(cursor)
     except Exception as e:
         print('There was an error saving the cursor')

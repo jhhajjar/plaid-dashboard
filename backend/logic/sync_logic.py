@@ -1,10 +1,11 @@
 import os
 from plaid.model.transactions_sync_request import TransactionsSyncRequest
+from backend.models.Transaction import TransactionEntity
 from logic.common import start_plaid, read_cursor, save_cursor
 from plaid.api import plaid_api
 
-from logic.transaction_logic import apply_additions, apply_updates, apply_deletions
 from data_access.transaction_repo import get_all_transactions, save_transactions
+from logic.transaction_logic import apply_additions, apply_updates, apply_deletions, map_transaction_to_transaction_entity
 
 
 def transaction_sync(plaid_client: plaid_api.PlaidApi, cursor: str = ""):
@@ -35,7 +36,7 @@ def transaction_sync(plaid_client: plaid_api.PlaidApi, cursor: str = ""):
     return added, modified, removed, curr_cursor
 
 
-def plaid_sync():
+def plaid_sync() -> list[TransactionEntity]:
     """
     Initiates transaction sync, resolves updates, additions, and deletions, returns cleaned ledger
     """
@@ -57,4 +58,4 @@ def plaid_sync():
     save_transactions(transactions)
     
     # return new transactions
-    return transactions
+    return [map_transaction_to_transaction_entity(tr) for tr in transactions]
