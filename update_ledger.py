@@ -5,7 +5,7 @@ import os
 from plaid.model.transactions_sync_request import TransactionsSyncRequest
 from collections import defaultdict
 from plaid.api import plaid_api
-from aws_utils import upload_file_s3, read_file_s3, COLUMNS
+from backend.logic.aws_utils import upload_file_s3, read_file_s3, COLUMNS
 from datetime import datetime as dt
 from argparse import ArgumentParser
 from dotenv import load_dotenv

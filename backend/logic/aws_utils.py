@@ -1,7 +1,6 @@
 import boto3
 import os
 import pandas as pd
-import numpy as np
 from dotenv import load_dotenv
 from io import StringIO
 
