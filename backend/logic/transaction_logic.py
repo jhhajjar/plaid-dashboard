@@ -1,24 +1,25 @@
-from datetime import datetime
 from models.Transaction import TransactionDTO, TransactionEntity
+from datetime import datetime
+from typing import List
 
 
-def apply_additions(transactions, additions):
+def apply_additions(transactions: List[TransactionEntity], additions: List[TransactionEntity]):
     transactions.extend(additions)
     return drop_duplicates(transactions)
 
-def apply_updates(transactions, updates):
+def apply_updates(transactions: List[TransactionEntity], updates: List[TransactionEntity]):
     return apply_additions(apply_deletions(transactions, updates), updates)
 
-def apply_deletions(transactions, deletions):
+def apply_deletions(transactions: List[TransactionEntity], deletions: List[TransactionEntity]):
     keys_to_delete = [
         f"{tr['transaction_id']}{tr['account_id']}" for tr in deletions
     ]
     return [tr for tr in transactions if gen_key(tr) not in keys_to_delete]
     
-def gen_key(transaction):
-    return f"{transaction['transaction_id']}{transaction['account_id']}"
+def gen_key(transaction: TransactionEntity):
+    return f"{transaction.id}{transaction.account_id}"
 
-def drop_duplicates(transactions):
+def drop_duplicates(transactions: List[TransactionEntity]):
     de_duped_transactions = []
     seen_pairs = set()
     
@@ -58,7 +59,7 @@ def map_transaction_to_dto(transaction: TransactionEntity) -> TransactionDTO:
         amount
     )
     
-def map_transaction_to_transaction_entity(tr) -> TransactionEntity:
+def map_plaid_transaction_to_transaction_entity(tr) -> TransactionEntity:
     trEntity = TransactionEntity()
     trEntity.id = tr['transaction_id']
     trEntity.account_id = tr['account_id']
@@ -88,4 +89,44 @@ def map_transaction_to_transaction_entity(tr) -> TransactionEntity:
     trEntity.category = tr['personal_finance_category']['detailed'] # TODO mapper
     
     return trEntity
+
+def map_json_transaction_to_transaction_entity(tr) -> TransactionEntity:
+    entity = TransactionEntity()
+    entity.id = tr['id']
+    entity.account_id = tr['account_id']
+    entity.amount = tr['amount']
+    entity.authorized_date = tr['authorized_date']
+    entity.authorized_datetime = tr['authorized_datetime']
+    entity.date = tr['date']
+    entity.datetime = tr['datetime']
+    entity.iso_currency_code = tr['iso_currency_code']
+    entity.logo_url = tr['logo_url']
+    entity.merchant_entity_id = tr['merchant_entity_id']
+    entity.merchant_name = tr['merchant_name']
+    entity.name = tr['name']
+    entity.payment_channel = tr['payment_channel']
+    entity.pending = tr['pending']
+    entity.transaction_code = tr['transaction_code']
+    entity.website = tr['website']
     
+    entity.address = tr['address']
+    entity.city = tr['city']
+    entity.country = tr['country']
+    entity.lat = tr['lat']
+    entity.lon = tr['lon']
+    entity.postal_code = tr['postal_code']
+    entity.region = tr['region']
+    
+    entity.category = tr['category']
+    
+    # Convert dates correctly
+    if entity.authorized_date is not None:
+        entity.authorized_date = datetime.strptime(entity.authorized_date, '%Y-%m-%d').date()
+    if entity.authorized_datetime is not None:
+        entity.authorized_datetime = datetime.strptime(entity.authorized_datetime, '%Y-%m-%d')
+    if entity.date is not None:
+        entity.date = datetime.strptime(entity.date, '%Y-%m-%d').date()
+    if entity.datetime is not None:
+        entity.datetime = datetime.strptime(entity.datetime, '%Y-%m-%d')
+    
+    return entity

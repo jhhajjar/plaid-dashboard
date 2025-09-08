@@ -1,11 +1,12 @@
 import os
 from plaid.model.transactions_sync_request import TransactionsSyncRequest
-from backend.models.Transaction import TransactionEntity
+from models.Transaction import TransactionEntity
 from logic.common import start_plaid, read_cursor, save_cursor
 from plaid.api import plaid_api
+from typing import List
 
 from data_access.transaction_repo import get_all_transactions, save_transactions
-from logic.transaction_logic import apply_additions, apply_updates, apply_deletions, map_transaction_to_transaction_entity
+from logic.transaction_logic import apply_additions, apply_updates, apply_deletions, map_plaid_transaction_to_transaction_entity
 
 
 def transaction_sync(plaid_client: plaid_api.PlaidApi, cursor: str = ""):
@@ -32,11 +33,15 @@ def transaction_sync(plaid_client: plaid_api.PlaidApi, cursor: str = ""):
         has_more = response['has_more']
         # Update cursor to the next cursor
         curr_cursor = response['next_cursor']
+        
+    # convert to Transaction Entity
+    mapped_added = [map_plaid_transaction_to_transaction_entity(added_trs) for added_trs in added]
+    mapped_modified = [map_plaid_transaction_to_transaction_entity(modified_trs) for modified_trs in modified]
 
-    return added, modified, removed, curr_cursor
+    return mapped_added, mapped_modified, removed, curr_cursor
 
 
-def plaid_sync() -> list[TransactionEntity]:
+def plaid_sync() -> List[TransactionEntity]:
     """
     Initiates transaction sync, resolves updates, additions, and deletions, returns cleaned ledger
     """
@@ -46,7 +51,6 @@ def plaid_sync() -> list[TransactionEntity]:
     # Call transaction sync
     cursor = read_cursor()
     added, modified, removed, new_cursor = transaction_sync(client, cursor)
-    save_cursor(new_cursor)
 
     # apply updates
     transactions = get_all_transactions()
@@ -56,6 +60,7 @@ def plaid_sync() -> list[TransactionEntity]:
     
     # write
     save_transactions(transactions)
+    save_cursor(new_cursor)
     
     # return new transactions
-    return [map_transaction_to_transaction_entity(tr) for tr in transactions]
+    return [tr for tr in transactions]

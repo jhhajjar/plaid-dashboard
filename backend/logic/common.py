@@ -2,7 +2,8 @@ import plaid
 import os
 from plaid.api import plaid_api
 
-CURSOR_PATH = '../data-access/.cursor'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CURSOR_PATH = f'{BASE_DIR}/../data_access/.cursor'
 
 def start_plaid():
     """"
@@ -33,7 +34,7 @@ def read_cursor():
 
 def save_cursor(cursor: str):
     try:
-        open(CURSOR_PATH).write(cursor)
+        open(CURSOR_PATH, 'w').write(cursor)
     except Exception as e:
         print('There was an error saving the cursor')
         print(f'NEW CURSOR: {cursor}')
