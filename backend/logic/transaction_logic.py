@@ -1,7 +1,10 @@
 from models.Transaction import TransactionDTO, TransactionEntity
-from datetime import datetime
+from datetime import date, datetime
 from typing import List
 
+
+def apply_filters(transactions: List[TransactionEntity], start: date, end: date) -> List[TransactionEntity]:
+    return list(map(lambda x: x.get_date() <= end and x.get_date() >= start, transactions))
 
 def apply_additions(transactions: List[TransactionEntity], additions: List[TransactionEntity]):
     transactions.extend(additions)

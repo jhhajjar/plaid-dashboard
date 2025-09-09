@@ -77,3 +77,6 @@ class TransactionEntity:
         dct = vars(self)
         for i in dct.keys():
             csv_string += f'{dct[i]},'
+            
+    def get_date(self):
+        return self.authorized_date if self.authorized_date is not None else self.date
