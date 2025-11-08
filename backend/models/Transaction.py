@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 
@@ -14,7 +15,8 @@ class TransactionCategory(str, Enum):
     FEE='FEE',
     ENTERTAINMENT='ENTERTAINMENT'
     
-
+    
+@dataclass
 class TransactionDTO:
     date: datetime
     transaction_id: str
