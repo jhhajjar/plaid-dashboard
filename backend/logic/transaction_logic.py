@@ -1,10 +1,12 @@
 from models.Transaction import TransactionDTO, TransactionEntity
-from datetime import date, datetime
+from datetime import  datetime
 from typing import List
 
 
-def apply_filters(transactions: List[TransactionEntity], start: date, end: date) -> List[TransactionEntity]:
-    return list(map(lambda x: x.get_date() <= end and x.get_date() >= start, transactions))
+def apply_filters(transactions: List[TransactionEntity], start: str, end: str) -> List[TransactionEntity]:
+    start_datetime = datetime.strptime(start, '%Y-%m')
+    end_datetime = datetime.strptime(end, '%Y-%m')
+    return list(filter(lambda x: x.get_date() <= end_datetime and x.get_date() >= start_datetime, transactions))
 
 def apply_additions(transactions: List[TransactionEntity], additions: List[TransactionEntity]):
     transactions.extend(additions)
@@ -41,8 +43,17 @@ def drop_duplicates(transactions: List[TransactionEntity]):
 def get_merchant_name(tr: TransactionEntity) -> str:
     return tr.merchant_name if tr.merchant_name != None else tr.name
 
+def format_date(date: str | datetime) -> datetime:
+    if type(date) == datetime:
+        return date
+    else:
+        format_string = '%Y-%m-%d'
+        return datetime.strptime(date, format_string)
+
 def get_authorized_date(tr: TransactionEntity) -> datetime:
-    return tr.authorized_date if tr.authorized_date != None else tr.date
+    date = tr.authorized_date if tr.authorized_date != None else tr.date
+    formatted_date = format_date(date)
+    return formatted_date
 
 def map_plaid_category_to_app_category(category: str):
     return category.replace('_', ' ')
@@ -124,12 +135,12 @@ def map_json_transaction_to_transaction_entity(tr) -> TransactionEntity:
     
     # Convert dates correctly
     if entity.authorized_date is not None:
-        entity.authorized_date = datetime.strptime(entity.authorized_date, '%Y-%m-%d').date()
+        entity.authorized_date = format_date(entity.authorized_date)
     if entity.authorized_datetime is not None:
-        entity.authorized_datetime = datetime.strptime(entity.authorized_datetime, '%Y-%m-%d')
+        entity.authorized_datetime = format_date(entity.authorized_datetime)
     if entity.date is not None:
-        entity.date = datetime.strptime(entity.date, '%Y-%m-%d').date()
+        entity.date = format_date(entity.date)
     if entity.datetime is not None:
-        entity.datetime = datetime.strptime(entity.datetime, '%Y-%m-%d')
+        entity.datetime = format_date(entity.datetime)
     
     return entity

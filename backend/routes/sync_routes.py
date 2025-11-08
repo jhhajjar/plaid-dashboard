@@ -4,7 +4,7 @@ from flask import Blueprint
 
 sync_bp = Blueprint("sync", __name__)
 
-@sync_bp.route('/sync', methods=['POST'])
+@sync_bp.route('/', methods=['POST'])
 def sync_request():
     # call plaid sync
     transactions = plaid_sync()

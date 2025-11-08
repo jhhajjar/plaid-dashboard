@@ -1,6 +1,6 @@
+from data_access.transaction_repo import get_all_transactions
 from logic.transaction_logic import map_transaction_to_dto, apply_filters
-from logic.sync_logic import plaid_sync
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 
 transactions_bp = Blueprint("transactions", __name__)
 
@@ -10,7 +10,7 @@ def get_transactions():
     end = request.args.get('end')
     
     # get transactions
-    transactions = plaid_sync()
+    transactions = get_all_transactions()
     filtered_transactions = apply_filters(transactions, start, end)
     
     # map the transactions
@@ -19,4 +19,4 @@ def get_transactions():
     # sort by date
     sorted_mapped_transactions = sorted(mapped_transactions, key=lambda x: x.date, reverse=True)
     
-    return sorted_mapped_transactions
+    return jsonify(sorted_mapped_transactions)

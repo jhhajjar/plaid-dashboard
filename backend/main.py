@@ -4,9 +4,9 @@ from flask_cors import CORS
 from flask import Flask
 
 app = Flask(__name__)
-app.register_blueprint(sync_bp)
-app.register_blueprint(transactions_bp)
 CORS(app)
+app.register_blueprint(sync_bp, url_prefix=f"/{sync_bp.name}")
+app.register_blueprint(transactions_bp, url_prefix=f"/{transactions_bp.name}")
 
 app.run()
 
