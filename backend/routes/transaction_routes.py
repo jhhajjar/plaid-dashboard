@@ -17,6 +17,6 @@ def get_transactions():
     mapped_transactions = [map_transaction_to_dto(tr) for tr in filtered_transactions]
     
     # sort by date
-    sorted_mapped_transactions = sorted(mapped_transactions, key=lambda x: x.date, reverse=True)
+    sorted_mapped_transactions = sorted(mapped_transactions, key=lambda x: x.date)
     
     return jsonify({ 'transactions': sorted_mapped_transactions })
