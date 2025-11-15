@@ -19,4 +19,4 @@ def get_transactions():
     # sort by date
     sorted_mapped_transactions = sorted(mapped_transactions, key=lambda x: x.date, reverse=True)
     
-    return jsonify(sorted_mapped_transactions)
+    return jsonify({ 'transactions': sorted_mapped_transactions })
