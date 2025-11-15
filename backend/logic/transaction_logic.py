@@ -1,3 +1,4 @@
+import calendar
 from models.Transaction import TransactionDTO, TransactionEntity
 from datetime import  datetime
 from typing import List
@@ -6,6 +7,8 @@ from typing import List
 def apply_filters(transactions: List[TransactionEntity], start: str, end: str) -> List[TransactionEntity]:
     start_datetime = datetime.strptime(start, '%Y-%m')
     end_datetime = datetime.strptime(end, '%Y-%m')
+    last_day_of_month = calendar.monthrange(end_datetime.year, end_datetime.month)[1]
+    end_datetime = end_datetime.replace(day=last_day_of_month)
     return list(filter(lambda x: x.get_date() <= end_datetime and x.get_date() >= start_datetime, transactions))
 
 def apply_additions(transactions: List[TransactionEntity], additions: List[TransactionEntity]):
