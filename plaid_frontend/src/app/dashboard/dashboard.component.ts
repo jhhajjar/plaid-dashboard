@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Transaction } from '../transaction';
 import { ApiService } from '../api.service';
 import { Category } from '../category';
+import { MONTHS, YEARS, Option } from '../constants';
 
 @Component({
   selector: 'app-dashboard',
@@ -17,6 +18,9 @@ export class DashboardComponent implements OnInit {
   spendingDataObject: any = {}
   netDataObject: any = {}
 
+  years: Option[] = []
+  months: Option[] = MONTHS
+
   startMonth: string = ""
   startYear: string = ""
   endMonth: string = ""
@@ -25,12 +29,15 @@ export class DashboardComponent implements OnInit {
   constructor(public apiClient: ApiService) { }
 
   ngOnInit(): void {
+    // set default start and end dates to today
     let today = new Date()
     this.endMonth = (today.getMonth() + 1).toString() // indexed at 0
     this.endYear = today.getFullYear().toString()
-
     this.startMonth = (today.getMonth() + 1).toString() // javascript thinks january is 0
     this.startYear = today.getFullYear().toString()
+
+    // fill out options (2021 to current year)
+    this.years = YEARS(today.getFullYear())
     this.callAPIForMainResponse()
   }
 
