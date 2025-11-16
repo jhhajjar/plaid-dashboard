@@ -60,7 +60,7 @@ export class DashboardComponent implements OnInit {
   }
 
   updateVariables(updatedTransactions: Transaction[]) {
-    updatedTransactions = updatedTransactions.filter(tr => tr['include_in_calc'] == true)
+    updatedTransactions = updatedTransactions.filter(tr => tr['includeInCalc'] == true)
     this.transactions = updatedTransactions
     this.calculateSums()
   }

@@ -22,7 +22,7 @@
             <!-- Name Column -->
             <ng-container matColumnDef="name">
                 <th mat-header-cell *matHeaderCellDef>Name</th>
-                <td mat-cell *matCellDef="let element">{{element.merchant_name}}</td>
+                <td mat-cell *matCellDef="let element">{{element.merchantName}}</td>
             </ng-container>
 
             <!-- Category Column -->
@@ -41,7 +41,7 @@
             <ng-container matColumnDef="included">
                 <th mat-header-cell *matHeaderCellDef>Include</th>
                 <td mat-cell *matCellDef="let element; let i = index">
-                    <input type="checkbox" [(ngModel)]="element.include_in_calc" (change)="changeValue()" />
+                    <input type="checkbox" [(ngModel)]="element.includeInCalc" (change)="changeValue()" />
                 </td>
             </ng-container>
 

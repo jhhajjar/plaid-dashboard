@@ -19,10 +19,11 @@ class TransactionCategory(str, Enum):
 @dataclass
 class TransactionDTO:
     date: datetime
-    transaction_id: str
-    merchant_name: str
+    transactionId: str
+    merchantName: str
     category: TransactionCategory
     amount: float
+    includeInCalc: bool
     
     def __init__(
         self,
@@ -33,10 +34,11 @@ class TransactionDTO:
         amount
     ):
         self.date = date
-        self.transaction_id = transaction_id
-        self.merchant_name = merchant_name
+        self.transactionId = transaction_id
+        self.merchantName = merchant_name
         self.category = category
         self.amount = amount
+        self.includeInCalc = True
         
     def __str__(self):
         return str(vars(self))
