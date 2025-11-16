@@ -11,23 +11,23 @@ def apply_filters(transactions: List[TransactionEntity], start: str, end: str) -
     end_datetime = end_datetime.replace(day=last_day_of_month)
     return list(filter(lambda x: x.get_date() <= end_datetime and x.get_date() >= start_datetime, transactions))
 
-def apply_additions(transactions: List[TransactionEntity], additions: List[TransactionEntity]):
+def apply_additions(transactions: List[TransactionEntity], additions: List[TransactionEntity]) -> List[TransactionEntity]:
     transactions.extend(additions)
     return drop_duplicates(transactions)
 
-def apply_updates(transactions: List[TransactionEntity], updates: List[TransactionEntity]):
+def apply_updates(transactions: List[TransactionEntity], updates: List[TransactionEntity]) -> List[TransactionEntity]:
     return apply_additions(apply_deletions(transactions, updates), updates)
 
-def apply_deletions(transactions: List[TransactionEntity], deletions: List[TransactionEntity]):
+def apply_deletions(transactions: List[TransactionEntity], deletions: List[TransactionEntity]) -> List[TransactionEntity]:
     keys_to_delete = [
         f"{tr['transaction_id']}{tr['account_id']}" for tr in deletions
     ]
     return [tr for tr in transactions if gen_key(tr) not in keys_to_delete]
     
-def gen_key(transaction: TransactionEntity):
+def gen_key(transaction: TransactionEntity) -> str:
     return f"{transaction.id}{transaction.account_id}"
 
-def drop_duplicates(transactions: List[TransactionEntity]):
+def drop_duplicates(transactions: List[TransactionEntity]) -> List[TransactionEntity]:
     de_duped_transactions = []
     seen_pairs = set()
     
@@ -50,7 +50,7 @@ def format_date(date: str | datetime) -> datetime:
     if type(date) == datetime:
         return date
     else:
-        format_string = '%Y-%m-%d'
+        format_string = '%Y-%m-%dT00:00:00'
         return datetime.strptime(date, format_string)
 
 def get_authorized_date(tr: TransactionEntity) -> datetime:
@@ -58,7 +58,17 @@ def get_authorized_date(tr: TransactionEntity) -> datetime:
     formatted_date = format_date(date)
     return formatted_date
 
-def map_plaid_category_to_app_category(category: str):
+def validate(tr: TransactionEntity) -> None:
+    """
+    Validates transaction entity before saving
+    """
+    if tr.amount != transform(tr.plaid_amount):
+        raise ValueError(f"Transaction {tr.id} has amount {tr.amount} not equal to transformed plaid amount {transform(tr.plaid_amount)}")
+
+def transform(amount: float) -> float:
+    return -amount
+
+def map_plaid_category_to_app_category(category: str) -> str:
     return category.replace('_', ' ')
 
 def map_transaction_to_dto(transaction: TransactionEntity) -> TransactionDTO:
@@ -80,7 +90,8 @@ def map_plaid_transaction_to_transaction_entity(tr) -> TransactionEntity:
     trEntity = TransactionEntity()
     trEntity.id = tr['transaction_id']
     trEntity.account_id = tr['account_id']
-    trEntity.amount = tr['amount']
+    trEntity.amount = transform(tr['amount'])
+    trEntity.plaid_amount = tr['amount']
     trEntity.authorized_date = tr['authorized_date']
     trEntity.authorized_datetime = tr['authorized_datetime']
     trEntity.date = tr['date']
@@ -112,6 +123,7 @@ def map_json_transaction_to_transaction_entity(tr) -> TransactionEntity:
     entity.id = tr['id']
     entity.account_id = tr['account_id']
     entity.amount = tr['amount']
+    entity.plaid_amount = tr['plaid_amount']
     entity.authorized_date = tr['authorized_date']
     entity.authorized_datetime = tr['authorized_datetime']
     entity.date = tr['date']

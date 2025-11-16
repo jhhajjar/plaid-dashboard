@@ -46,6 +46,7 @@ class TransactionEntity:
     id: str
     account_id: str
     amount: float
+    plaid_amount: float
     authorized_date: datetime
     authorized_datetime: datetime
     date: datetime
