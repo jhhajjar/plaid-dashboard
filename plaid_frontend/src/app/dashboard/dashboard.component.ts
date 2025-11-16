@@ -44,12 +44,8 @@ export class DashboardComponent implements OnInit {
   callAPIForMainResponse() {
     this.apiClient.getMainResponse(`${this.startYear}-${this.startMonth}`, `${this.endYear}-${this.endMonth}`).subscribe(
       response => {
-        this.allTransactions = JSON.parse(response.transactions)
+        this.allTransactions = response.transactions
         this.transactions = this.allTransactions
-        this.numberOfDays = response.numberOfDays
-        this.compareCategories = JSON.parse(response.compareCategories)
-
-        this.transactions.sort((a, b) => a.authorized_date - b.authorized_date)
 
         this.calculateSums()
       }

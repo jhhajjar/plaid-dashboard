@@ -28,6 +28,7 @@
                     <mat-option value="2022">2022</mat-option>
                     <mat-option value="2023">2023</mat-option>
                     <mat-option value="2024">2024</mat-option>
+                    <mat-option value="2025">2025</mat-option>
                 </mat-select>
             </mat-form-field>
         </div>
@@ -59,6 +60,7 @@
                     <mat-option value="2022">2022</mat-option>
                     <mat-option value="2023">2023</mat-option>
                     <mat-option value="2024">2024</mat-option>
+                    <mat-option value="2025">2025</mat-option>
                 </mat-select>
             </mat-form-field>
         </div>
@@ -67,11 +69,6 @@
     </div>
     <div class="main-figures">
         <app-networth class="networth" [data]="this.transactions"></app-networth>
-        <div class="column-numbers">
-            <app-incomebyday [dataObject]="this.incomeDataObject"></app-incomebyday>
-            <app-spendingbyday [dataObject]="this.spendingDataObject"></app-spendingbyday>
-            <app-netbyday [dataObject]="this.netDataObject"></app-netbyday>
-        </div>
     </div>
     <div class="second-row">
         <app-categories class="categories" [data]="this.transactions"></app-categories>
