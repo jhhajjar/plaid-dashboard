@@ -21,20 +21,20 @@ export class DashboardComponent implements OnInit {
   years: Option[] = []
   months: Option[] = MONTHS
 
-  startMonth: string = ""
-  startYear: string = ""
-  endMonth: string = ""
-  endYear: string = ""
+  startMonth: number = 0
+  startYear: number = 0
+  endMonth: number = 0
+  endYear: number = 0
 
   constructor(public apiClient: ApiService) { }
 
   ngOnInit(): void {
     // set default start and end dates to today
     let today = new Date()
-    this.endMonth = (today.getMonth() + 1).toString() // indexed at 0
-    this.endYear = today.getFullYear().toString()
-    this.startMonth = (today.getMonth() + 1).toString() // javascript thinks january is 0
-    this.startYear = today.getFullYear().toString()
+    this.endMonth = today.getMonth() + 1 // indexed at 0
+    this.endYear = today.getFullYear()
+    this.startMonth = today.getMonth() + 1 // javascript thinks january is 0
+    this.startYear = today.getFullYear()
 
     // fill out options (2021 to current year)
     this.years = YEARS(today.getFullYear())

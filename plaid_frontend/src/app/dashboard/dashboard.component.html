@@ -7,28 +7,17 @@
             <mat-form-field class="month-dropdown">
                 <mat-label>Month</mat-label>
                 <mat-select [(ngModel)]="startMonth" (selectionChange)="setEndDate()">
-                    <mat-option value="1">January</mat-option>
-                    <mat-option value="2">Febuary</mat-option>
-                    <mat-option value="3">March</mat-option>
-                    <mat-option value="4">April</mat-option>
-                    <mat-option value="5">May</mat-option>
-                    <mat-option value="6">June</mat-option>
-                    <mat-option value="7">July</mat-option>
-                    <mat-option value="8">August</mat-option>
-                    <mat-option value="9">September</mat-option>
-                    <mat-option value="10">October</mat-option>
-                    <mat-option value="11">November</mat-option>
-                    <mat-option value="12">December</mat-option>
+                    <mat-option *ngFor="let option of months" [value]="option.id">
+                    {{ option.name }}
+                    </mat-option>
                 </mat-select>
             </mat-form-field>
             <mat-form-field class="year-dropdown">
                 <mat-label>Year</mat-label>
                 <mat-select [(ngModel)]="startYear" (selectionChange)="setEndDate()">
-                    <mat-option value="2021">2021</mat-option>
-                    <mat-option value="2022">2022</mat-option>
-                    <mat-option value="2023">2023</mat-option>
-                    <mat-option value="2024">2024</mat-option>
-                    <mat-option value="2025">2025</mat-option>
+                    <mat-option *ngFor="let option of years" [value]="option.id">
+                    {{ option.name }}
+                    </mat-option>
                 </mat-select>
             </mat-form-field>
         </div>
@@ -39,28 +28,17 @@
             <mat-form-field class="month-dropdown">
                 <mat-label>Month</mat-label>
                 <mat-select [(ngModel)]="endMonth" (selectionChange)="setStartDate()">
-                    <mat-option value="1">January</mat-option>
-                    <mat-option value="2">Febuary</mat-option>
-                    <mat-option value="3">March</mat-option>
-                    <mat-option value="4">April</mat-option>
-                    <mat-option value="5">May</mat-option>
-                    <mat-option value="6">June</mat-option>
-                    <mat-option value="7">July</mat-option>
-                    <mat-option value="8">August</mat-option>
-                    <mat-option value="9">September</mat-option>
-                    <mat-option value="10">October</mat-option>
-                    <mat-option value="11">November</mat-option>
-                    <mat-option value="12">December</mat-option>
+                    <mat-option *ngFor="let option of months" [value]="option.id">
+                    {{ option.name }}
+                    </mat-option>
                 </mat-select>
             </mat-form-field>
             <mat-form-field class="year-dropdown">
                 <mat-label>Year</mat-label>
                 <mat-select [(ngModel)]="endYear" (selectionChange)="setStartDate()">
-                    <mat-option value="2021">2021</mat-option>
-                    <mat-option value="2022">2022</mat-option>
-                    <mat-option value="2023">2023</mat-option>
-                    <mat-option value="2024">2024</mat-option>
-                    <mat-option value="2025">2025</mat-option>
+                    <mat-option *ngFor="let option of years" [value]="option.id">
+                    {{ option.name }}
+                    </mat-option>
                 </mat-select>
             </mat-form-field>
         </div>
