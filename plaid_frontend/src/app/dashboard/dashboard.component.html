@@ -69,11 +69,9 @@
     </div>
     <div class="main-figures">
         <app-networth class="networth" [data]="this.transactions"></app-networth>
-    </div>
-    <div class="second-row">
         <app-categories class="categories" [data]="this.transactions"></app-categories>
         <app-table class="table" [data]="this.allTransactions"
-            (transactionsChange)="updateVariables($event)"></app-table>
+        (transactionsChange)="updateVariables($event)"></app-table>
     </div>
     <div>
     </div>
