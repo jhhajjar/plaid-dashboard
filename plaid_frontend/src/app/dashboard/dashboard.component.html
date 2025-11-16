@@ -6,7 +6,7 @@
         <div class="mat-form-field-container">
             <mat-form-field class="month-dropdown">
                 <mat-label>Month</mat-label>
-                <mat-select [(ngModel)]="startMonth">
+                <mat-select [(ngModel)]="startMonth" (selectionChange)="setEndDate()">
                     <mat-option value="1">January</mat-option>
                     <mat-option value="2">Febuary</mat-option>
                     <mat-option value="3">March</mat-option>
@@ -23,7 +23,7 @@
             </mat-form-field>
             <mat-form-field class="year-dropdown">
                 <mat-label>Year</mat-label>
-                <mat-select [(ngModel)]="startYear">
+                <mat-select [(ngModel)]="startYear" (selectionChange)="setEndDate()">
                     <mat-option value="2021">2021</mat-option>
                     <mat-option value="2022">2022</mat-option>
                     <mat-option value="2023">2023</mat-option>
@@ -38,7 +38,7 @@
         <div class="mat-form-field-container">
             <mat-form-field class="month-dropdown">
                 <mat-label>Month</mat-label>
-                <mat-select [(ngModel)]="endMonth">
+                <mat-select [(ngModel)]="endMonth" (selectionChange)="setStartDate()">
                     <mat-option value="1">January</mat-option>
                     <mat-option value="2">Febuary</mat-option>
                     <mat-option value="3">March</mat-option>
@@ -55,7 +55,7 @@
             </mat-form-field>
             <mat-form-field class="year-dropdown">
                 <mat-label>Year</mat-label>
-                <mat-select [(ngModel)]="endYear">
+                <mat-select [(ngModel)]="endYear" (selectionChange)="setStartDate()">
                     <mat-option value="2021">2021</mat-option>
                     <mat-option value="2022">2022</mat-option>
                     <mat-option value="2023">2023</mat-option>

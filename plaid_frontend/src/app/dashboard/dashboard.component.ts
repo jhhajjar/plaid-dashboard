@@ -26,13 +26,30 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     let today = new Date()
-    // today.setMonth(today.getMonth() - 1)
     this.endMonth = (today.getMonth() + 1).toString() // indexed at 0
     this.endYear = today.getFullYear().toString()
 
     this.startMonth = (today.getMonth() + 1).toString() // javascript thinks january is 0
     this.startYear = today.getFullYear().toString()
     this.callAPIForMainResponse()
+  }
+
+  setEndDate() {
+    if (this.startYear > this.endYear) {
+      this.endYear = this.startYear
+    } else if (this.startYear == this.endYear && this.startMonth > this.endMonth) {
+      this.endMonth = this.startMonth
+    }
+  }
+
+  setStartDate() {
+    console.log(this.startYear == this.endYear)
+    console.log(this.startMonth, this.endMonth, this.startMonth > this.endMonth)
+    if (this.startYear > this.endYear) {
+      this.startYear = this.endYear
+    } else if (this.startYear == this.endYear && this.startMonth > this.endMonth) {
+      this.startMonth = this.endMonth
+    }
   }
 
   updateVariables(updatedTransactions: Transaction[]) {
