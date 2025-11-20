@@ -1,4 +1,5 @@
 import calendar
+import os
 from models.Transaction import TransactionCategory, TransactionDTO, TransactionEntity
 from datetime import  datetime
 from typing import List
@@ -62,11 +63,15 @@ def validate(tr: TransactionEntity) -> None:
     """
     Validates transaction entity before saving
     """
-    if tr.amount != transform(tr.plaid_amount):
-        raise ValueError(f"Transaction {tr.id} has amount {tr.amount} not equal to transformed plaid amount {transform(tr.plaid_amount)}")
+    if tr.amount != transform_amount(tr):
+        raise ValueError(f"Transaction {tr.id} has amount {tr.amount} not equal to transformed plaid amount {transform_amount(tr)}")
 
-def transform(amount: float) -> float:
-    return -amount
+def transform_amount(transaction: TransactionEntity) -> float:
+    bank_account_ids = os.getenv("PLAID_BANK_ACCOUNT_IDS").split(',')
+    if (transaction.account_id in bank_account_ids): # Bank account
+        return transaction.plaid_amount
+    else: # Credit card account
+        return -transaction.plaid_amount
 
 def map_plaid_category_to_app_category(category: str) -> str:
     """
@@ -242,8 +247,8 @@ def map_plaid_transaction_to_transaction_entity(tr) -> TransactionEntity:
     trEntity = TransactionEntity()
     trEntity.id = tr['transaction_id']
     trEntity.account_id = tr['account_id']
-    trEntity.amount = transform(tr['amount'])
     trEntity.plaid_amount = tr['amount']
+    trEntity.amount = transform_amount(trEntity)
     trEntity.authorized_date = tr['authorized_date']
     trEntity.authorized_datetime = tr['authorized_datetime']
     trEntity.date = tr['date']
