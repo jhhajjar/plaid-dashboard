@@ -67,11 +67,7 @@ def validate(tr: TransactionEntity) -> None:
         raise ValueError(f"Transaction {tr.id} has amount {tr.amount} not equal to transformed plaid amount {transform_amount(tr)}")
 
 def transform_amount(transaction: TransactionEntity) -> float:
-    bank_account_ids = os.getenv("PLAID_BANK_ACCOUNT_IDS").split(',')
-    if (transaction.account_id in bank_account_ids): # Bank account
-        return transaction.plaid_amount
-    else: # Credit card account
-        return -transaction.plaid_amount
+    return -transaction.plaid_amount
 
 def map_plaid_category_to_app_category(category: str) -> str:
     """
