@@ -1,5 +1,5 @@
 import calendar
-from models.Transaction import TransactionDTO, TransactionEntity
+from models.Transaction import TransactionCategory, TransactionDTO, TransactionEntity
 from datetime import  datetime
 from typing import List
 
@@ -69,7 +69,159 @@ def transform(amount: float) -> float:
     return -amount
 
 def map_plaid_category_to_app_category(category: str) -> str:
-    return category.replace('_', ' ')
+    """
+    Maps a detailed Plaid category string to a simplified application category.
+
+    Args:
+        category: The raw Plaid category string (e.g., 'FOOD_AND_DRINK_RESTAURANT').
+
+    Returns:
+        The simplified TransactionCategory value (e.g., 'FOOD').
+    """
+    
+    # 1. INCOME
+    if category in {
+        'INCOME_WAGES',
+        'INCOME_INTEREST_EARNED',
+        'INCOME_TAX_REFUND',
+    }:
+        return TransactionCategory.INCOME
+        
+    # 2. FEES (Bank Fees)
+    elif category in {
+        'BANK_FEES_FOREIGN_TRANSACTION_FEES',
+        'BANK_FEES_ATM_FEES',
+        'BANK_FEES_OTHER_BANK_FEES',
+        'BANK_FEES_INTEREST_CHARGE',
+    }:
+        return TransactionCategory.FEE
+
+    # 3. GROCERIES
+    elif category in {
+        'FOOD_AND_DRINK_GROCERIES',
+        'GENERAL_MERCHANDISE_SUPERSTORES', # Often includes significant grocery purchases
+    }:
+        return TransactionCategory.GROCERIES
+
+    # 4. FOOD (Dining, Coffee, Alcohol, Fast Food)
+    elif category in {
+        'FOOD_AND_DRINK_RESTAURANT',
+        'FOOD_AND_DRINK_OTHER_FOOD_AND_DRINK',
+        'FOOD_AND_DRINK_BEER_WINE_AND_LIQUOR',
+        'FOOD_AND_DRINK_COFFEE',
+        'FOOD_AND_DRINK_VENDING_MACHINES',
+        'FOOD_AND_DRINK_FAST_FOOD',
+    }:
+        return TransactionCategory.FOOD
+
+    # 5. SHOPPING (General Merchandise, Clothing, Personal Care)
+    elif category in {
+        'GENERAL_MERCHANDISE_OTHER_GENERAL_MERCHANDISE',
+        'GENERAL_MERCHANDISE_CLOTHING_AND_ACCESSORIES',
+        'GENERAL_MERCHANDISE_SPORTING_GOODS',
+        'GENERAL_MERCHANDISE_CONVENIENCE_STORES',
+        'GENERAL_MERCHANDISE_ONLINE_MARKETPLACES',
+        'GENERAL_MERCHANDISE_PET_SUPPLIES',
+        'GENERAL_MERCHANDISE_BOOKSTORES_AND_NEWSSTANDS',
+        'GENERAL_MERCHANDISE_TOBACCO_AND_VAPE',
+        'GENERAL_MERCHANDISE_GIFTS_AND_NOVELTIES',
+        'GENERAL_MERCHANDISE_ELECTRONICS',
+        'GENERAL_MERCHANDISE_DISCOUNT_STORES',
+        'GENERAL_MERCHANDISE_DEPARTMENT_STORES',
+        'HOME_IMPROVEMENT_HARDWARE',
+        'HOME_IMPROVEMENT_FURNITURE',
+    }:
+        return TransactionCategory.SHOPPING
+
+    # 6. ENTERTAINMENT
+    elif category in {
+        'ENTERTAINMENT_TV_AND_MOVIES',
+        'ENTERTAINMENT_SPORTING_EVENTS_AMUSEMENT_PARKS_AND_MUSEUMS',
+        'ENTERTAINMENT_OTHER_ENTERTAINMENT',
+        'ENTERTAINMENT_CASINOS_AND_GAMBLING',
+        'ENTERTAINMENT_VIDEO_GAMES',
+        'ENTERTAINMENT_MUSIC_AND_AUDIO',
+    }:
+        return TransactionCategory.ENTERTAINMENT
+
+    # 7. HOUSING/UTILITIES
+    elif category in {
+        'RENT_AND_UTILITIES_GAS_AND_ELECTRICITY',
+        'RENT_AND_UTILITIES_TELEPHONE',
+        'RENT_AND_UTILITIES_RENT',
+    }:
+        return TransactionCategory.HOUSING
+
+    # 8. TRANSPORTATION
+    elif category in {
+        'TRANSPORTATION_GAS',
+        'TRANSPORTATION_TAXIS_AND_RIDE_SHARES',
+        'TRANSPORTATION_PARKING',
+        'TRANSPORTATION_PUBLIC_TRANSIT',
+        'TRANSPORTATION_OTHER_TRANSPORTATION',
+        'GENERAL_SERVICES_AUTOMOTIVE',
+        # TRAVEL
+        'TRAVEL_FLIGHTS',
+        'TRAVEL_LODGING',
+        'TRAVEL_OTHER_TRAVEL',
+        'TRAVEL_RENTAL_CARS', # Treating this as transport cost
+    }:
+        return TransactionCategory.TRANSPORTATION
+
+    # 9. INVESTING/LOANS/DEBT
+    elif category in {
+        'TRANSFER_OUT_INVESTMENT_AND_RETIREMENT_FUNDS',
+        'LOAN_PAYMENTS_CREDIT_CARD_PAYMENT',
+        'LOAN_PAYMENTS_PERSONAL_LOAN_PAYMENT',
+    }:
+        return TransactionCategory.INVESTING
+    
+    # 10. SELF_IMPROVEMENT (Health, Medical, Personal Care)
+    elif category in {
+        'PERSONAL_CARE_GYMS_AND_FITNESS_CENTERS',
+        'PERSONAL_CARE_HAIR_AND_BEAUTY',
+        'PERSONAL_CARE_OTHER_PERSONAL_CARE',
+        'PERSONAL_CARE_LAUNDRY_AND_DRY_CLEANING',
+        # HEALTH & MEDICAL
+        'MEDICAL_OTHER_MEDICAL',
+        'MEDICAL_PHARMACIES_AND_SUPPLEMENTS',
+        'MEDICAL_DENTAL_CARE',
+    }:
+        return TransactionCategory.SELF_IMPROVEMENT
+    
+    # 11. TRAVEL
+    elif category in {
+        'TRAVEL_FLIGHTS',
+        'TRAVEL_LODGING',
+        'TRAVEL_OTHER_TRAVEL',
+        'TRAVEL_RENTAL_CARS',
+    }:
+        return TransactionCategory.TRAVEL
+
+    # 12. MISC (Medical, Travel, Transfers, Services, Government, Personal Care)
+    # Catch-all for everything that doesn't fit neatly into the main buckets.
+    elif category in {
+        # SERVICES
+        'GENERAL_SERVICES_OTHER_GENERAL_SERVICES',
+        'GENERAL_SERVICES_POSTAGE_AND_SHIPPING',
+        'GENERAL_SERVICES_EDUCATION',
+        'GENERAL_SERVICES_ACCOUNTING_AND_FINANCIAL_PLANNING',
+        # GOVERNMENT/DONATIONS
+        'GOVERNMENT_AND_NON_PROFIT_DONATIONS',
+        'GOVERNMENT_AND_NON_PROFIT_GOVERNMENT_DEPARTMENTS_AND_AGENCIES',
+        # TRANSFERS (Usually handled by Plaid as not income/expense, but categorized here for completeness)
+        'TRANSFER_OUT_ACCOUNT_TRANSFER',
+        'TRANSFER_IN_ACCOUNT_TRANSFER',
+        'TRANSFER_OUT_WITHDRAWAL',
+        'TRANSFER_IN_DEPOSIT',
+        'TRANSFER_OUT_OTHER_TRANSFER_OUT',
+    }:
+        return TransactionCategory.MISC
+        
+    # Default for any new or uncategorized Plaid items
+    else:
+        print('Unmapped category:', category)
+        return TransactionCategory.MISC
 
 def map_transaction_to_dto(transaction: TransactionEntity) -> TransactionDTO:
     transaction_id = transaction.id
