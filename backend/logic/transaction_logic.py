@@ -1,5 +1,4 @@
 import calendar
-import os
 from models.Transaction import TransactionCategory, TransactionDTO, TransactionEntity
 from datetime import  datetime
 from typing import List
@@ -17,9 +16,10 @@ def apply_additions(transactions: List[TransactionEntity], additions: List[Trans
     return drop_duplicates(transactions)
 
 def apply_updates(transactions: List[TransactionEntity], updates: List[TransactionEntity]) -> List[TransactionEntity]:
-    return apply_additions(apply_deletions(transactions, updates), updates)
+    to_delete = [{"transaction_id": tr.id, "account_id": tr.account_id} for tr in updates]
+    return apply_additions(apply_deletions(transactions, to_delete), updates)
 
-def apply_deletions(transactions: List[TransactionEntity], deletions: List[TransactionEntity]) -> List[TransactionEntity]:
+def apply_deletions(transactions: List[TransactionEntity], deletions: List[dict]) -> List[TransactionEntity]:
     keys_to_delete = [
         f"{tr['transaction_id']}{tr['account_id']}" for tr in deletions
     ]

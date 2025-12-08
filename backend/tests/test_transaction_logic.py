@@ -1,7 +1,9 @@
 import unittest
 import sys
 import os
+import json
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from models.Transaction import TransactionEntity
 
 from logic.transaction_logic import (
     gen_key,
@@ -11,24 +13,32 @@ from logic.transaction_logic import (
     apply_deletions
 )
 
+def create_transaction_mock(id, account_id, amount):
+    tr = TransactionEntity()
+    tr.id = id
+    tr.account_id = account_id
+    tr.amount = amount
+    
+    return tr
+
 
 class TestTransactionLogic(unittest.TestCase):
     
     def test_drop_duplicates(self):
         transactions = [
-            {'transaction_id': 'txn1', 'account_id': 'acc1', 'amount': 100},
-            {'transaction_id': 'txn2', 'account_id': 'acc2', 'amount': 200},
-            {'transaction_id': 'txn1', 'account_id': 'acc1', 'amount': 150},  # duplicate key
-            {'transaction_id': 'txn3', 'account_id': 'acc3', 'amount': 300},
+            create_transaction_mock("txn1", "acc1", 100),
+            create_transaction_mock("txn2", "acc2", 200),
+            create_transaction_mock("txn1", "acc1", 150),  # duplicate key
+            create_transaction_mock("txn3", "acc3", 300),
         ]
         
         result = drop_duplicates(transactions)
         
         self.assertEqual(len(result), 3)
-        self.assertEqual(result[0]['transaction_id'], 'txn1')
-        self.assertEqual(result[0]['amount'], 100)  # keeps first occurrence
-        self.assertEqual(result[1]['transaction_id'], 'txn2')
-        self.assertEqual(result[2]['transaction_id'], 'txn3')
+        self.assertEqual(result[0].id, 'txn1')
+        self.assertEqual(result[0].amount, 100)  # keeps first occurrence
+        self.assertEqual(result[1].id, 'txn2')
+        self.assertEqual(result[2].id, 'txn3')
         
     def test_drop_duplicates_empty_list(self):
         result = drop_duplicates([])
@@ -36,21 +46,21 @@ class TestTransactionLogic(unittest.TestCase):
         
     def test_drop_duplicates_no_duplicates(self):
         transactions = [
-            {'transaction_id': 'txn1', 'account_id': 'acc1'},
-            {'transaction_id': 'txn2', 'account_id': 'acc2'},
+            create_transaction_mock("txn1", "acc1", 100),
+            create_transaction_mock("txn2", "acc2", 200),
         ]
         result = drop_duplicates(transactions)
         self.assertEqual(result, transactions)
     
     def test_apply_additions(self):
         existing = [
-            {'transaction_id': 'txn1', 'account_id': 'acc1', 'amount': 100},
-            {'transaction_id': 'txn2', 'account_id': 'acc2', 'amount': 200},
+            create_transaction_mock("txn1", "acc1", 100),
+            create_transaction_mock("txn2", "acc2", 200),
         ]
         
         additions = [
-            {'transaction_id': 'txn3', 'account_id': 'acc3', 'amount': 300},
-            {'transaction_id': 'txn1', 'account_id': 'acc1', 'amount': 150},  # duplicate
+            create_transaction_mock("txn3", "acc3", 300),
+            create_transaction_mock("txn1", "acc1", 150),  # duplicate
         ]
         
         result = apply_additions(existing, additions)
@@ -63,28 +73,28 @@ class TestTransactionLogic(unittest.TestCase):
         
     def test_apply_additions_empty_existing(self):
         additions = [
-            {'transaction_id': 'txn1', 'account_id': 'acc1'},
+            create_transaction_mock("txn1", "acc1", 100),
         ]
         result = apply_additions([], additions)
         self.assertEqual(result, additions)
         
     def test_apply_additions_empty_additions(self):
         existing = [
-            {'transaction_id': 'txn1', 'account_id': 'acc1'},
+            create_transaction_mock("txn1", "acc1", 100),
         ]
         result = apply_additions(existing, [])
         self.assertEqual(result, existing)
     
     def test_apply_updates(self):
         existing = [
-            {'transaction_id': 'txn1', 'account_id': 'acc1', 'amount': 100},
-            {'transaction_id': 'txn2', 'account_id': 'acc2', 'amount': 200},
-            {'transaction_id': 'txn3', 'account_id': 'acc3', 'amount': 300},
+            create_transaction_mock("txn1", "acc1", 100),
+            create_transaction_mock("txn2", "acc2", 200),
+            create_transaction_mock("txn3", "acc3", 300)   ,
         ]
         
         updates = [
-            {'transaction_id': 'txn1', 'account_id': 'acc1', 'amount': 150},  # should replace existing txn1
-            {'transaction_id': 'txn3', 'account_id': 'acc3', 'amount': 400},  # should replace existing txn3
+            create_transaction_mock("txn1", "acc1", 150),  # should replace existing txn1
+            create_transaction_mock("txn3", "acc3", 400),  # should replace existing txn3
         ]
         
         result = apply_updates(existing, updates)
@@ -97,13 +107,13 @@ class TestTransactionLogic(unittest.TestCase):
         
     def test_apply_updates_all_stale(self):
         existing = [
-            {'transaction_id': 'txn1', 'account_id': 'acc1'},
-            {'transaction_id': 'txn2', 'account_id': 'acc2'},
+            create_transaction_mock("txn1", "acc1", 100),
+            create_transaction_mock("txn2", "acc2", 200),
         ]
         
         updates = [
-            {'transaction_id': 'txn1', 'account_id': 'acc1'},
-            {'transaction_id': 'txn2', 'account_id': 'acc2'},
+            create_transaction_mock("txn1", "acc1", 100),
+            create_transaction_mock("txn2", "acc2", 200),
         ]
         
         result = apply_updates(existing, updates)
@@ -111,42 +121,42 @@ class TestTransactionLogic(unittest.TestCase):
     
     def test_apply_deletions(self):
         existing = [
-            {'transaction_id': 'txn1', 'account_id': 'acc1', 'amount': 100},
-            {'transaction_id': 'txn2', 'account_id': 'acc2', 'amount': 200},
-            {'transaction_id': 'txn3', 'account_id': 'acc3', 'amount': 300},
+            create_transaction_mock("txn1", "acc1", 100),
+            create_transaction_mock("txn2", "acc2", 200),
+            create_transaction_mock("txn3", "acc3", 300),
         ]
         
         deletions = [
-            {'transaction_id': 'txn1', 'account_id': 'acc1'},
-            {'transaction_id': 'txn3', 'account_id': 'acc3'},
+            {'transaction_id': "txn1", "account_id": "acc1"},
+            {'transaction_id': "txn3", "account_id": "acc3"},
         ]
         
         result = apply_deletions(existing, deletions)
         
         self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]['transaction_id'], 'txn2')
-        self.assertEqual(result[0]['account_id'], 'acc2')
+        self.assertEqual(result[0].id, 'txn2')
+        self.assertEqual(result[0].account_id, 'acc2')
         
     def test_apply_deletions_no_matches(self):
         existing = [
-            {'transaction_id': 'txn1', 'account_id': 'acc1'},
-            {'transaction_id': 'txn2', 'account_id': 'acc2'},
+            create_transaction_mock("txn1", "acc1", 100),
+            create_transaction_mock("txn2", "acc2", 200),
         ]
         
         deletions = [
-            {'transaction_id': 'txn3', 'account_id': 'acc3'},
+            {'transaction_id': "txn3", "account_id": "acc3"},
         ]
         
         result = apply_deletions(existing, deletions)
         self.assertEqual(result, existing)
         
     def test_apply_deletions_empty_list(self):
-        result = apply_deletions([], [{'transaction_id': 'txn1', 'account_id': 'acc1'}])
+        result = apply_deletions([], [{'transaction_id': "txn1", "account_id": "acc1"}])
         self.assertEqual(result, [])
         
     def test_apply_deletions_no_deletions(self):
         existing = [
-            {'transaction_id': 'txn1', 'account_id': 'acc1'},
+            create_transaction_mock("txn1", "acc1", 100),
         ]
         result = apply_deletions(existing, [])
         self.assertEqual(result, existing)
