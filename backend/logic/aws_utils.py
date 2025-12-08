@@ -8,7 +8,7 @@ COLUMNS = ["date", "authorized_date", "transaction_id",
            "name", "merchant_name", "plaid_categories", "amount"]
 
 
-def upload_file_s3(df, file_name):
+def upload_file_s3(df: pd.DataFrame, file_name: str) -> bool:
     """Upload a file to an S3 bucket
 
     :param file_name: File to upload
