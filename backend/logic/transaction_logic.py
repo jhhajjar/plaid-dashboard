@@ -51,8 +51,13 @@ def format_date(date: str | datetime) -> datetime:
     if type(date) == datetime:
         return date
     else:
-        format_string = '%Y-%m-%dT00:00:00'
-        return datetime.strptime(date, format_string)
+        # sometimes these come in with the time
+        if len(date) == 19:
+            format_string = '%Y-%m-%dT00:00:00'
+            return datetime.strptime(date, format_string)
+        elif len(date) == 10:
+            format_string = '%Y-%m-%d'
+            return datetime.strptime(date, format_string)
 
 def get_authorized_date(tr: TransactionEntity) -> datetime:
     date = tr.authorized_date if tr.authorized_date != None else tr.date
