@@ -228,6 +228,16 @@ def map_plaid_category_to_app_category(category: str) -> str:
     else:
         print('Unmapped category:', category)
         return TransactionCategory.MISC
+        
+def to_file_friendly(tr: TransactionEntity) -> dict:
+    if(type(tr) == dict):
+        return tr
+    return vars(tr)
+
+def custom_serializer(obj) -> str:
+    if isinstance(obj, (datetime.date, datetime.datetime)):
+        return obj.isoformat()
+    raise TypeError(f"Type {type(obj)} not serializable")
 
 def map_transaction_to_dto(transaction: TransactionEntity) -> TransactionDTO:
     transaction_id = transaction.id

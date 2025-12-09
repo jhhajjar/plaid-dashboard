@@ -1,35 +1,33 @@
-import datetime
 import json
 import os
 
-from typing import List
-from logic.transaction_logic import map_json_transaction_to_transaction_entity, validate
+from logic.aws_utils import read_transactions_s3, upload_transactions_s3
+from logic.transaction_logic import map_json_transaction_to_transaction_entity, validate, custom_serializer, to_file_friendly
 from models.Transaction import TransactionEntity
+from typing import List
 
 # Get the absolute path of this script's directory
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Build the path relative to the script's directory
-TRANSACTION_FILE_PATH = os.path.join(BASE_DIR, "transactions.json")
+TRANSACTION_FILE_PATH_LOCAL = os.path.join(BASE_DIR, "transactions.json")
+TRANSACTION_FILE_NAME_S3 = "transactions.json"
 
 def get_all_transactions() -> List[TransactionEntity]:
-    with open(TRANSACTION_FILE_PATH, 'r') as fp:
+    raw_trs = read_transactions_s3(TRANSACTION_FILE_NAME_S3)
+    return list(map(map_json_transaction_to_transaction_entity, raw_trs))
+
+def get_all_transactions_local() -> List[TransactionEntity]:
+    with open(TRANSACTION_FILE_PATH_LOCAL, 'r') as fp:
         transactions = json.load(fp)
         
     return list(map(map_json_transaction_to_transaction_entity, transactions))
 
-def custom_serializer(obj) -> str:
-    if isinstance(obj, (datetime.date, datetime.datetime)):
-        return obj.isoformat()
-    raise TypeError(f"Type {type(obj)} not serializable")
+def save_tranasctions(trs: List[TransactionEntity]) -> bool:
+    return upload_transactions_s3(trs, TRANSACTION_FILE_NAME_S3)
 
-def save_transactions(trs: List[TransactionEntity]) -> None:
+def save_transactions_local(trs: List[TransactionEntity]) -> None:
     [validate(tr) for tr in trs]
     json_trs = [to_file_friendly(tr) for tr in trs]
-    with open(TRANSACTION_FILE_PATH, 'w') as fp:
+    with open(TRANSACTION_FILE_PATH_LOCAL, 'w') as fp:
         json.dump(json_trs, fp, default=custom_serializer, indent=2)
-        
-def to_file_friendly(tr: TransactionEntity) -> dict:
-    if(type(tr) == dict):
-        return tr
-    return vars(tr)
