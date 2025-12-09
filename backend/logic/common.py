@@ -1,7 +1,7 @@
 import plaid
 import os
 from plaid.api import plaid_api
-from backend.logic.aws_utils import read_cursor_s3, upload_cursor_s3
+from logic.aws_utils import read_cursor_s3, upload_cursor_s3
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CURSOR_PATH_LOCAL = f'{BASE_DIR}/../data_access/.cursor'
