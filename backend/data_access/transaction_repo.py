@@ -23,7 +23,7 @@ def get_all_transactions_local() -> List[TransactionEntity]:
         
     return list(map(map_json_transaction_to_transaction_entity, transactions))
 
-def save_tranasctions(trs: List[TransactionEntity]) -> bool:
+def save_transactions(trs: List[TransactionEntity]) -> bool:
     return upload_transactions_s3(trs, TRANSACTION_FILE_NAME_S3)
 
 def save_transactions_local(trs: List[TransactionEntity]) -> None:
