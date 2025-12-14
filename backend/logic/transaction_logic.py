@@ -1,6 +1,6 @@
 import calendar
 from models.Transaction import TransactionCategory, TransactionDTO, TransactionEntity
-from datetime import  datetime
+from datetime import datetime, date
 from typing import List
 
 
@@ -235,7 +235,7 @@ def to_file_friendly(tr: TransactionEntity) -> dict:
     return vars(tr)
 
 def custom_serializer(obj) -> str:
-    if isinstance(obj, (datetime.date, datetime.datetime)):
+    if isinstance(obj, (date, datetime)):
         return obj.isoformat()
     raise TypeError(f"Type {type(obj)} not serializable")
 
