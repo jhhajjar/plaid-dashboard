@@ -155,6 +155,7 @@ def map_plaid_category_to_app_category(category: str) -> str:
         'RENT_AND_UTILITIES_GAS_AND_ELECTRICITY',
         'RENT_AND_UTILITIES_TELEPHONE',
         'RENT_AND_UTILITIES_RENT',
+        'LOAN_PAYMENTS_MORTGAGE_PAYMENT',
     }:
         return TransactionCategory.HOUSING
 
@@ -221,6 +222,7 @@ def map_plaid_category_to_app_category(category: str) -> str:
         'TRANSFER_OUT_WITHDRAWAL',
         'TRANSFER_IN_DEPOSIT',
         'TRANSFER_OUT_OTHER_TRANSFER_OUT',
+        'TRANSFER_IN_OTHER_TRANSFER_IN',
     }:
         return TransactionCategory.MISC
         
