@@ -11,4 +11,3 @@ app.register_blueprint(sync_bp, url_prefix=f"/{sync_bp.name}")
 app.register_blueprint(transactions_bp, url_prefix=f"/{transactions_bp.name}")
 
 app.run()
-

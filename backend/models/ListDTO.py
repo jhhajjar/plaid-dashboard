@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, List
 
+
 @dataclass
 class ListDTO:
     def __init__(self, page: int, pageSize: int, list: List[Any]):

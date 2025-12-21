@@ -7,8 +7,15 @@ from models.Transaction import TransactionEntity
 from dotenv import load_dotenv
 from io import StringIO
 
-COLUMNS = ["date", "authorized_date", "transaction_id",
-           "name", "merchant_name", "plaid_categories", "amount"]
+COLUMNS = [
+    "date",
+    "authorized_date",
+    "transaction_id",
+    "name",
+    "merchant_name",
+    "plaid_categories",
+    "amount",
+]
 
 
 def upload_cursor_s3(cursor: str, file_name: str) -> bool:
@@ -21,9 +28,9 @@ def upload_cursor_s3(cursor: str, file_name: str) -> bool:
 
     # Upload the file
     load_dotenv()
-    access_key = os.getenv('S3_ACCESS_KEY')
-    secret_key = os.getenv('S3_SECRET_KEY')
-    bucket = os.getenv('S3_BUCKET')
+    access_key = os.getenv("S3_ACCESS_KEY")
+    secret_key = os.getenv("S3_SECRET_KEY")
+    bucket = os.getenv("S3_BUCKET")
 
     s3_client = boto3.client(
         "s3",
@@ -31,12 +38,12 @@ def upload_cursor_s3(cursor: str, file_name: str) -> bool:
         aws_secret_access_key=secret_key,
     )
     try:
-        s3_client.put_object(Bucket=bucket, Key=file_name,
-                             Body=cursor)
+        s3_client.put_object(Bucket=bucket, Key=file_name, Body=cursor)
     except Exception as e:
         print(e)
         return False
     return True
+
 
 def read_cursor_s3(file_name: str) -> str:
     """Read transaction list from an S3 bucket
@@ -46,9 +53,9 @@ def read_cursor_s3(file_name: str) -> str:
     :return: True if file was uploaded, else False
     """
     load_dotenv()
-    access_key = os.getenv('S3_ACCESS_KEY')
-    secret_key = os.getenv('S3_SECRET_KEY')
-    bucket_name = os.getenv('S3_BUCKET')
+    access_key = os.getenv("S3_ACCESS_KEY")
+    secret_key = os.getenv("S3_SECRET_KEY")
+    bucket_name = os.getenv("S3_BUCKET")
 
     s3_client = boto3.client(
         "s3",
@@ -57,12 +64,13 @@ def read_cursor_s3(file_name: str) -> str:
     )
     try:
         response = s3_client.get_object(Bucket=bucket_name, Key=file_name)
-        cursor = response['Body'].read().decode('utf-8')
+        cursor = response["Body"].read().decode("utf-8")
     except Exception as e:
         print(e)
         return ""
 
     return cursor
+
 
 def upload_transactions_s3(transactions: TransactionEntity, file_name: str) -> bool:
     """Upload a file to an S3 bucket
@@ -75,12 +83,12 @@ def upload_transactions_s3(transactions: TransactionEntity, file_name: str) -> b
     buffer = StringIO()
     json_trs = [to_file_friendly(tr) for tr in transactions]
     json.dump(json_trs, buffer, default=custom_serializer, indent=2)
-    
+
     # Upload the file
     load_dotenv()
-    access_key = os.getenv('S3_ACCESS_KEY')
-    secret_key = os.getenv('S3_SECRET_KEY')
-    bucket = os.getenv('S3_BUCKET')
+    access_key = os.getenv("S3_ACCESS_KEY")
+    secret_key = os.getenv("S3_SECRET_KEY")
+    bucket = os.getenv("S3_BUCKET")
 
     s3_client = boto3.client(
         "s3",
@@ -88,12 +96,12 @@ def upload_transactions_s3(transactions: TransactionEntity, file_name: str) -> b
         aws_secret_access_key=secret_key,
     )
     try:
-        s3_client.put_object(Bucket=bucket, Key=file_name,
-                             Body=buffer.getvalue())
+        s3_client.put_object(Bucket=bucket, Key=file_name, Body=buffer.getvalue())
     except Exception as e:
         print(e)
         return False
     return True
+
 
 def read_transactions_s3(file_name):
     """Read transaction list from an S3 bucket
@@ -103,9 +111,9 @@ def read_transactions_s3(file_name):
     :return: True if file was uploaded, else False
     """
     load_dotenv()
-    access_key = os.getenv('S3_ACCESS_KEY')
-    secret_key = os.getenv('S3_SECRET_KEY')
-    bucket_name = os.getenv('S3_BUCKET')
+    access_key = os.getenv("S3_ACCESS_KEY")
+    secret_key = os.getenv("S3_SECRET_KEY")
+    bucket_name = os.getenv("S3_BUCKET")
 
     s3_client = boto3.client(
         "s3",
@@ -114,7 +122,7 @@ def read_transactions_s3(file_name):
     )
     try:
         response = s3_client.get_object(Bucket=bucket_name, Key=file_name)
-        transactions = json.load(response['Body'])
+        transactions = json.load(response["Body"])
     except Exception as e:
         print(e)
         return []
@@ -135,9 +143,9 @@ def upload_file_s3(df: pd.DataFrame, file_name: str) -> bool:
 
     # Upload the file
     load_dotenv()
-    access_key = os.getenv('S3_ACCESS_KEY')
-    secret_key = os.getenv('S3_SECRET_KEY')
-    bucket = os.getenv('S3_BUCKET')
+    access_key = os.getenv("S3_ACCESS_KEY")
+    secret_key = os.getenv("S3_SECRET_KEY")
+    bucket = os.getenv("S3_BUCKET")
 
     s3_client = boto3.client(
         "s3",
@@ -145,8 +153,7 @@ def upload_file_s3(df: pd.DataFrame, file_name: str) -> bool:
         aws_secret_access_key=secret_key,
     )
     try:
-        s3_client.put_object(Bucket=bucket, Key=file_name,
-                             Body=buffer.getvalue())
+        s3_client.put_object(Bucket=bucket, Key=file_name, Body=buffer.getvalue())
     except Exception as e:
         print(e)
         return False
@@ -161,9 +168,9 @@ def read_file_s3(file_name):
     :return: True if file was uploaded, else False
     """
     load_dotenv()
-    access_key = os.getenv('S3_ACCESS_KEY')
-    secret_key = os.getenv('S3_SECRET_KEY')
-    bucket_name = os.getenv('S3_BUCKET')
+    access_key = os.getenv("S3_ACCESS_KEY")
+    secret_key = os.getenv("S3_SECRET_KEY")
+    bucket_name = os.getenv("S3_BUCKET")
 
     s3_client = boto3.client(
         "s3",
@@ -172,7 +179,7 @@ def read_file_s3(file_name):
     )
     try:
         response = s3_client.get_object(Bucket=bucket_name, Key=file_name)
-        df = pd.read_csv(response['Body'])
+        df = pd.read_csv(response["Body"])
     except Exception as e:
         print(e)
         return pd.DataFrame(columns=COLUMNS)

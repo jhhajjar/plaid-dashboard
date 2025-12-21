@@ -6,7 +6,12 @@ from plaid.api import plaid_api
 from typing import List
 
 from data_access.transaction_repo import get_all_transactions, save_transactions
-from logic.transaction_logic import apply_additions, apply_updates, apply_deletions, map_plaid_transaction_to_transaction_entity
+from logic.transaction_logic import (
+    apply_additions,
+    apply_updates,
+    apply_deletions,
+    map_plaid_transaction_to_transaction_entity,
+)
 
 
 def transaction_sync(plaid_client: plaid_api.PlaidApi, cursor: str = ""):
@@ -21,22 +26,27 @@ def transaction_sync(plaid_client: plaid_api.PlaidApi, cursor: str = ""):
     # Iterate through each page of new transaction updates for item
     while has_more:
         request = TransactionsSyncRequest(
-            access_token=os.getenv('PLAID_ACCESS_TOKEN'),
+            access_token=os.getenv("PLAID_ACCESS_TOKEN"),
             cursor=curr_cursor,
             count=500,
         )
         response = plaid_client.transactions_sync(request)
         # Add this page of results
-        added.extend(response['added'])
-        modified.extend(response['modified'])
-        removed.extend(response['removed'])
-        has_more = response['has_more']
+        added.extend(response["added"])
+        modified.extend(response["modified"])
+        removed.extend(response["removed"])
+        has_more = response["has_more"]
         # Update cursor to the next cursor
-        curr_cursor = response['next_cursor']
-        
+        curr_cursor = response["next_cursor"]
+
     # convert to Transaction Entity
-    mapped_added = [map_plaid_transaction_to_transaction_entity(added_trs) for added_trs in added]
-    mapped_modified = [map_plaid_transaction_to_transaction_entity(modified_trs) for modified_trs in modified]
+    mapped_added = [
+        map_plaid_transaction_to_transaction_entity(added_trs) for added_trs in added
+    ]
+    mapped_modified = [
+        map_plaid_transaction_to_transaction_entity(modified_trs)
+        for modified_trs in modified
+    ]
 
     return mapped_added, mapped_modified, removed, curr_cursor
 
@@ -57,10 +67,10 @@ def plaid_sync() -> List[TransactionEntity]:
     transactions = apply_additions(transactions, added)
     transactions = apply_updates(transactions, modified)
     transactions = apply_deletions(transactions, removed)
-    
+
     # write
     save_transactions(transactions)
     save_cursor(new_cursor)
-    
+
     # return new transactions
     return [tr for tr in transactions]
