@@ -1,3 +1,4 @@
+from datetime import datetime
 import plaid
 import os
 from plaid.api import plaid_api
@@ -52,3 +53,7 @@ def save_cursor_local(cursor: str):
         print("There was an error saving the cursor")
         print(f"NEW CURSOR: {cursor}")
         print(e)
+
+
+def log(message: str):
+    print(f"[{datetime.now()}] {message}")

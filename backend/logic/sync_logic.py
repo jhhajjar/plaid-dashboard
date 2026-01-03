@@ -1,7 +1,7 @@
 import os
 from plaid.model.transactions_sync_request import TransactionsSyncRequest
 from models.Transaction import TransactionEntity
-from logic.common import start_plaid, read_cursor, save_cursor
+from logic.common import log, start_plaid, read_cursor, save_cursor
 from plaid.api import plaid_api
 from typing import List
 
@@ -61,6 +61,7 @@ def plaid_sync() -> List[TransactionEntity]:
     # Call transaction sync
     cursor = read_cursor()
     added, modified, removed, new_cursor = transaction_sync(client, cursor)
+    log(f"Plaid Sync Results - Added: {len(added)}, Modified: {len(modified)}, Removed: {len(removed)}")
 
     # apply updates
     transactions = get_all_transactions()
