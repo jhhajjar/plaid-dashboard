@@ -22,7 +22,7 @@ def apply_filters(
 def apply_additions(
     transactions: List[TransactionEntity], additions: List[TransactionEntity]
 ) -> List[TransactionEntity]:
-    transactions.extend(additions)
+    transactions = transactions + additions
     return drop_duplicates(transactions)
 
 
