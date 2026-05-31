@@ -24,7 +24,7 @@ export class NetworthComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     console.log("change detected in netw orth")
-    this.dates = this.data.map(item => new Date(item.authorized_date)) // utc seconds -> Date
+    this.dates = this.data.map(item => new Date(item.date)) // utc seconds -> Date
     this.amounts = this.data.map(item => item.amount)
 
     this.makeLineChart()

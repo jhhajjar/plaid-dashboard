@@ -1,11 +1,8 @@
 export interface Transaction {
-    transactionID: string,
+    transactionId: string,
     date: number,
-    authorized_date: number,
-    name: string,
-    merchant_name: string,
-    plaid_categories: string[],
+    merchantName: string,
     category: string,
     amount: number,
-    include_in_calc: boolean
+    includeInCalc: boolean
 }

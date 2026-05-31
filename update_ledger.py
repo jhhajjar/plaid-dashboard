@@ -5,7 +5,7 @@ import os
 from plaid.model.transactions_sync_request import TransactionsSyncRequest
 from collections import defaultdict
 from plaid.api import plaid_api
-from aws_utils import upload_file_s3, read_file_s3, COLUMNS
+from backend.logic.aws_utils import upload_file_s3, read_file_s3, COLUMNS
 from datetime import datetime as dt
 from argparse import ArgumentParser
 from dotenv import load_dotenv
@@ -22,7 +22,7 @@ def start_plaid():
     Starts plaid client
     """
     configuration = plaid.Configuration(
-        host=plaid.Environment.Development,
+        host=plaid.Environment.Production,
         api_key={
             'clientId': os.getenv("PLAID_CLIENT_ID"),
             'secret': os.getenv("PLAID_SECRET"),
@@ -44,6 +44,7 @@ def get_recent_transactions(cursor=""):
     client = start_plaid()
 
     # New transaction updates since "cursor"
+    curr_cursor = cursor
     added = []
     modified = []
     removed = []  # Removed transaction ids
@@ -52,7 +53,8 @@ def get_recent_transactions(cursor=""):
     while has_more:
         request = TransactionsSyncRequest(
             access_token=os.getenv('PLAID_ACCESS_TOKEN'),
-            cursor=cursor,
+            cursor=curr_cursor,
+            count=500,
         )
         response = client.transactions_sync(request)
         # Add this page of results
@@ -61,9 +63,9 @@ def get_recent_transactions(cursor=""):
         removed.extend(response['removed'])
         has_more = response['has_more']
         # Update cursor to the next cursor
-        cursor = response['next_cursor']
+        curr_cursor = response['next_cursor']
 
-    return [added, modified, removed], cursor
+    return [added, modified, removed], curr_cursor
 
 
 def categorize(trans_row):
@@ -238,7 +240,7 @@ def main(args):
         clean_transactions = clean_ledger(raw_transactions)
         upload_file_s3(clean_transactions, "clean_ledger.csv")
     else:
-        raw_transactions.to_csv('./DEBUG_raw_ledger.csv', index=False)
+        raw_transactions.to_csv('./raw_ledger.scratch.csv', index=False)
 
     print(
         f"{now}: Added {updates[0]}, Modified {updates[1]}, Deleted {updates[2]}")

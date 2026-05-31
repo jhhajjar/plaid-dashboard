@@ -1,16 +1,14 @@
 .main-body-container {
     background-color: rgb(23, 39, 52);
     height: 100%;
-    overflow-y: scroll;
+    display: flex;
 }
 
 .side-panel-container {
     float: left;
-    display: flex;
-    flex-direction: column;
     align-items: flex-start;
     margin: 2%;
-    width: 20%;
+    min-width: 25%;
     color: white;
 }
 
@@ -38,7 +36,8 @@
 
 .main-figures {
     justify-content: center;
-    display: flex;
+    width: 100%;
+    overflow-y: scroll;
 }
 
 .networth {

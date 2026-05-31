@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Transaction } from '../transaction';
 import { ApiService } from '../api.service';
 import { Category } from '../category';
+import { MONTHS, YEARS, Option } from '../constants';
 
 @Component({
   selector: 'app-dashboard',
@@ -17,26 +18,49 @@ export class DashboardComponent implements OnInit {
   spendingDataObject: any = {}
   netDataObject: any = {}
 
-  startMonth: string = ""
-  startYear: string = ""
-  endMonth: string = ""
-  endYear: string = ""
+  years: Option[] = []
+  months: Option[] = MONTHS
+
+  startMonth: number = 0
+  startYear: number = 0
+  endMonth: number = 0
+  endYear: number = 0
 
   constructor(public apiClient: ApiService) { }
 
   ngOnInit(): void {
+    // set default start and end dates to today
     let today = new Date()
-    // today.setMonth(today.getMonth() - 1)
-    this.endMonth = (today.getMonth() + 1).toString() // indexed at 0
-    this.endYear = today.getFullYear().toString()
+    this.endMonth = today.getMonth() + 1 // indexed at 0
+    this.endYear = today.getFullYear()
+    this.startMonth = today.getMonth() + 1 // javascript thinks january is 0
+    this.startYear = today.getFullYear()
 
-    this.startMonth = (today.getMonth() + 1).toString() // javascript thinks january is 0
-    this.startYear = today.getFullYear().toString()
+    // fill out options (2021 to current year)
+    this.years = YEARS(today.getFullYear())
     this.callAPIForMainResponse()
   }
 
+  setEndDate() {
+    if (this.startYear > this.endYear) {
+      this.endYear = this.startYear
+    } else if (this.startYear == this.endYear && this.startMonth > this.endMonth) {
+      this.endMonth = this.startMonth
+    }
+  }
+
+  setStartDate() {
+    console.log(this.startYear == this.endYear)
+    console.log(this.startMonth, this.endMonth, this.startMonth > this.endMonth)
+    if (this.startYear > this.endYear) {
+      this.startYear = this.endYear
+    } else if (this.startYear == this.endYear && this.startMonth > this.endMonth) {
+      this.startMonth = this.endMonth
+    }
+  }
+
   updateVariables(updatedTransactions: Transaction[]) {
-    updatedTransactions = updatedTransactions.filter(tr => tr['include_in_calc'] == true)
+    updatedTransactions = updatedTransactions.filter(tr => tr['includeInCalc'] == true)
     this.transactions = updatedTransactions
     this.calculateSums()
   }
@@ -44,12 +68,8 @@ export class DashboardComponent implements OnInit {
   callAPIForMainResponse() {
     this.apiClient.getMainResponse(`${this.startYear}-${this.startMonth}`, `${this.endYear}-${this.endMonth}`).subscribe(
       response => {
-        this.allTransactions = JSON.parse(response.transactions)
+        this.allTransactions = response.transactions
         this.transactions = this.allTransactions
-        this.numberOfDays = response.numberOfDays
-        this.compareCategories = JSON.parse(response.compareCategories)
-
-        this.transactions.sort((a, b) => a.authorized_date - b.authorized_date)
 
         this.calculateSums()
       }
