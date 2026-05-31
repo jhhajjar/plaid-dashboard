@@ -18,7 +18,8 @@ import { NgChartsModule } from 'ng2-charts';
 import { MatCardModule } from '@angular/material/card';
 import { TableComponent } from './table/table.component';
 import { MatTableModule } from '@angular/material/table';
-import { ToDatePipe } from './to-date.pipe';
+import { ToDatePipe } from './pipes/to-date.pipe';
+import { FormatPriceAmount } from './pipes/format-price-amount.pipe';
 import { CategoriesComponent } from './categories/categories.component';
 import { IncomebydayComponent } from './incomebyday/incomebyday.component';
 import { SpendingbydayComponent } from './spendingbyday/spendingbyday.component';
@@ -51,7 +52,8 @@ import { NetbydayComponent } from './netbyday/netbyday.component';
     NgChartsModule,
     MatCardModule,
     MatTableModule,
-    ToDatePipe
+    ToDatePipe,
+    FormatPriceAmount,
   ],
   providers: [
     ApiService,
